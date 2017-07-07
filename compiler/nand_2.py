@@ -21,7 +21,7 @@ class nand_2(design.design):
 
     unique_id = 1
     
-    def __init__(self, nmos_width=1, height=bitcell.chars["height"]):
+    def __init__(self, nmos_width=1, height=bitcell.height):
         """Constructor : Creates a cell for a simple 2 input nand"""
         name = "nand2_{0}".format(nand_2.unique_id)
         nand_2.unique_id += 1
@@ -58,7 +58,6 @@ class nand_2(design.design):
         self.route_pins()
         self.extend_wells()
         self.extend_active()
-        self.setup_layout_offsets()
 
     # Determine transistor size
     def determine_sizes(self):
@@ -103,23 +102,19 @@ class nand_2(design.design):
         rail_height = drc["minwidth_metal1"]
         self.rail_height = rail_height
         # Relocate the origin
-        self.gnd_position = vector(0, - 0.5 * drc["minwidth_metal1"])
-        self.add_rect(layer="metal1",
-                      offset=self.gnd_position,
-                      width=rail_width,
-                      height=rail_height)
-        self.add_label(text="gnd",
-                       layer="metal1",
-                       offset=self.gnd_position)
+        self.gnd_loc = vector(0, - 0.5 * drc["minwidth_metal1"])
+        self.add_layout_pin(text="gnd",
+                            layer="metal1",
+                            offset=self.gnd_loc,
+                            width=rail_width,
+                            height=rail_height)
 
-        self.vdd_position = vector(0, self.height - 0.5 * drc["minwidth_metal1"])
-        self.add_rect(layer="metal1", 
-                      offset=self.vdd_position,
-                      width=rail_width,
-                      height=rail_height)
-        self.add_label(text="vdd",
-                       layer="metal1", 
-                       offset=self.vdd_position)
+        self.vdd_loc = vector(0, self.height - 0.5 * drc["minwidth_metal1"])
+        self.add_layout_pin(text="vdd",
+                            layer="metal1", 
+                            offset=self.vdd_loc,
+                            width=rail_width,
+                            height=rail_height)
 
     def add_ptx(self):
         """  transistors are added and placed inside the layout         """
@@ -322,13 +317,11 @@ class nand_2(design.design):
                         - self.poly_contact.height)
         yoffset += self.poly_contact.via_layer_position.x
         offset = self.input_position1 = vector(0, yoffset)
-        self.add_rect(layer="metal1",
-                      offset=offset,
-                      width=input_length,
-                      height=drc["minwidth_metal1"])
-        self.add_label(text="A",
-                       layer="metal1",
-                       offset=offset)
+        self.add_layout_pin(text="A",
+                            layer="metal1",
+                            offset=offset,
+                            width=input_length,
+                            height=drc["minwidth_metal1"])
 
     def route_input_gate_B(self):
         """ routing for input B """
@@ -366,10 +359,10 @@ class nand_2(design.design):
         offset = self.output_position = vector(xoffset, yoffset)
         output_length = self.width - xoffset
         self.add_layout_pin(text="Z",
-                      layer="metal1",
-                      offset=offset,
-                      width=output_length,
-                      height=drc["minwidth_metal1"])
+                            layer="metal1",
+                            offset=offset,
+                            width=output_length,
+                            height=drc["minwidth_metal1"])
 
     def extend_wells(self):
         """ Extension of well """
@@ -435,13 +428,6 @@ class nand_2(design.design):
                       width=width,
                       height=self.nmos1.active_height)
 
-    def setup_layout_offsets(self):
-        """ Defining the position of i/o pins for the two input nand gate """
-        self.A_position = self.A_position = self.input_position1
-        self.B_position = self.B_position = self.input_position2
-        self.Z_position = self.Z_position = self.output_position
-        self.vdd_position = self.vdd_position
-        self.gnd_position = self.gnd_position
 
     def input_load(self):
         from tech import spice

@@ -21,7 +21,7 @@ class nand_3(design.design):
 
     unique_id = 1
     
-    def __init__(self, nmos_width=1, height=bitcell.chars["height"]):
+    def __init__(self, nmos_width=1, height=bitcell.height):
         """Constructor : Creates a cell for a simple 3 input nand"""
         name = "nand3_{0}".format(nand_3.unique_id)
         nand_3.unique_id += 1
@@ -58,7 +58,6 @@ class nand_3(design.design):
         self.extend_active()
         self.connect_rails()
         self.route_pins()
-        self.setup_layout_offsets()
 
     def determine_sizes(self):
         """ Determine the size of the transistors used in this module """
@@ -109,19 +108,19 @@ class nand_3(design.design):
         self.rail_height = rail_height = drc["minwidth_metal1"]
 
         # Relocate the origin
-        self.gnd_position = vector(0 , - 0.5 * drc["minwidth_metal1"])
+        self.gnd_loc = vector(0 , - 0.5 * drc["minwidth_metal1"])
         self.add_layout_pin(text="gnd",
-                      layer="metal1",
-                      offset=self.gnd_position,
-                      width=rail_width,
-                      height=rail_height)
+                            layer="metal1",
+                            offset=self.gnd_loc,
+                            width=rail_width,
+                            height=rail_height)
 
-        self.vdd_position = vector(0, self.height - 0.5 * drc["minwidth_metal1"])
+        self.vdd_loc = vector(0, self.height - 0.5 * drc["minwidth_metal1"])
         self.add_layout_pin(text="vdd",
-                      layer="metal1",
-                      offset=self.vdd_position,
-                      width=rail_width,
-                      height=rail_height)
+                            layer="metal1",
+                            offset=self.vdd_loc,
+                            width=rail_width,
+                            height=rail_height)
 
     def add_ptx(self):
         """  transistors are added and placed inside the layout  """
@@ -343,24 +342,22 @@ class nand_3(design.design):
                       width=-(self.poly_contact.first_layer_position.y + drc["minwidth_poly"]),
                       height=self.poly_contact.first_layer_width)
 
-        offset = vector(offset.x,
-                        self.pmos_position1.y + self.pmos1.poly_positions[0].y)
+        pin_offset = vector(0,
+                            self.pmos_position1.y + self.pmos1.poly_positions[0].y - drc["minwidth_metal1"])
         self.add_layout_pin(text="A",
-                      layer="metal1",
-                      offset=offset,
-                      width=-offset.x,
-                      height=-drc["minwidth_metal1"])
-        self.A_position = vector(0, offset.y - drc["minwidth_metal1"])
+                            layer="metal1",
+                            offset=pin_offset,
+                            width=offset.x,
+                            height=drc["minwidth_metal1"])
 
 
     def route_input_gate_B(self):
         """  routing for input B """
-        xoffset = self.pmos2.poly_positions[0].x \
-            + self.pmos_position2.x - drc["minwidth_poly"]
+        xoffset = self.pmos2.poly_positions[0].x + self.pmos_position2.x - drc["minwidth_poly"]
         yoffset = self.nmos_position1.y + self.nmos1.height \
-            - drc["well_enclosure_active"] + (self.nmos1.active_contact.height \
-                                                       - self.nmos1.active_height) / 2 \
-                                                       + drc["metal1_to_metal1"]
+                  - drc["well_enclosure_active"] + (self.nmos1.active_contact.height \
+                                                    - self.nmos1.active_height) / 2 \
+                                                    + drc["metal1_to_metal1"]
         self.add_contact(layers=("poly", "contact", "metal1"),
                          offset=[xoffset,yoffset])
         self.add_via(layers=("metal1", "via1", "metal2"),
@@ -374,10 +371,6 @@ class nand_3(design.design):
                       width=length,
                       height=-drc["minwidth_metal2"])
 
-        self.B_position = vector(0, yoffset - drc["minwidth_metal1"])
-        self.add_label(text="B",
-                       layer="metal1",
-                       offset=self.B_position)
 
         xoffset = self.pmos_position1.x + self.pmos1.active_position.x \
             - drc["metal1_to_metal1"] + (self.pmos1.active_contact.width \
@@ -385,10 +378,12 @@ class nand_3(design.design):
         self.add_via(layers=("metal1", "via1", "metal2"),
                      offset=[xoffset,yoffset - drc["minwidth_metal2"]],
                      rotate=90)
-        self.add_rect(layer="metal1",
-                      offset=[xoffset, yoffset],
-                      width=-xoffset,
-                      height=-drc["minwidth_metal1"])
+        B_loc = vector(0, yoffset - drc["minwidth_metal1"])
+        self.add_layout_pin(text="B",
+                            layer="metal1",
+                            offset=B_loc,
+                            width=xoffset,
+                            height=drc["minwidth_metal1"])
 
     def route_input_gate_C(self):
         """  routing for input A """
@@ -413,19 +408,11 @@ class nand_3(design.design):
                       width=length,
                       height=-drc["minwidth_metal2"])
 
-        # FIXME: Convert to add_layout_pin?
         self.add_rect(layer="metal2",
                       offset=[xoffset - self.m1m2_via.width,
                               yoffset],
                       width=self.m1m2_via.width,
                       height=-drc["minwidth_metal2"] - drc["metal2_to_metal2"])
-        self.C_position = vector(0,
-                                 self.B_position.y - drc["metal2_to_metal2"] - drc["minwidth_metal1"] \
-                                    - (self.m1m2_via.second_layer_width 
-                                           - self.m1m2_via.first_layer_width))
-        self.add_label(text="C",
-                       layer="metal1",
-                       offset=self.C_position)
 
         xoffset = self.pmos_position1.x + self.pmos1.active_position.x \
             - drc["metal1_to_metal1"] + (self.pmos1.active_contact.width \
@@ -434,11 +421,12 @@ class nand_3(design.design):
                      offset=[xoffset,
                              yoffset - 2 * drc["minwidth_metal2"] - self.m1m2_via.width],
                      rotate=90)
-        self.add_rect(layer="metal1",
-                      offset=[xoffset,
-                              yoffset - 2 * drc["minwidth_metal2"]],
-                      width=-xoffset,
-                      height=-drc["minwidth_metal1"])
+        self.add_layout_pin(text="C",
+                            layer="metal1",
+                            offset=[0,
+                                    yoffset - 2 * drc["minwidth_metal2"] - self.m1m2_via.width],
+                            width=xoffset,
+                            height=drc["minwidth_metal1"])
 
     def route_output(self):
         """  routing for output Z """
@@ -447,16 +435,12 @@ class nand_3(design.design):
         yoffset = (self.nmos1.height + (self.height - drc["minwidth_metal1"] 
                                             - self.pmos1.height - self.nmos1.height) / 2
                                      - (drc["minwidth_metal1"] / 2))
-        # FIXME Convert to add_layout_pin?
-        self.add_rect(layer="metal1",
-                      offset=[xoffset, yoffset],
-                      width=self.well_width - xoffset,
-                      height=drc["minwidth_metal1"])
+        self.add_layout_pin(text="Z",
+                            layer="metal1",
+                            offset=[xoffset, yoffset],
+                            width=self.well_width - xoffset,
+                            height=drc["minwidth_metal1"])
 
-        self.Z_position = vector(self.well_width, yoffset)
-        self.add_label(text="Z",
-                       layer="metal1",
-                       offset=self.Z_position)
 
     def extend_wells(self):
         """  extension of well """
@@ -520,14 +504,6 @@ class nand_3(design.design):
                       width=width,
                       height=self.nmos1.active_height)
 
-    def setup_layout_offsets(self):
-        """ Defining the position of i/o pins for the three input nand gate """
-        self.A_position = self.A_position
-        self.B_position = self.B_position
-        self.C_position = self.C_position
-        self.Z_position = self.Z_position
-        self.vdd_position = self.vdd_position
-        self.gnd_position = self.gnd_position
 
     def input_load(self):
         return ((self.nmos_size+self.pmos_size)/parameter["min_tx_size"])*spice["min_tx_gate_c"]

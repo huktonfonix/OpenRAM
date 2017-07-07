@@ -175,8 +175,8 @@ class bank(design.design):
     def create_modules(self):
         """ Create all the modules using the class loader """
         self.bitcell_array = self.mod_bitcell_array(name="bitcell_array", 
-                                              cols=self.num_cols,
-                                              rows=self.num_rows)
+                                                    cols=self.num_cols,
+                                                    rows=self.num_rows)
         self.add_mod(self.bitcell_array)
 
         self.precharge_array = self.mod_precharge_array(name="precharge_array", 
