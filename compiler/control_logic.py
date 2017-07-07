@@ -33,28 +33,31 @@ class control_logic(design.design):
         self.create_modules()
         self.setup_layout_offsets()
         self.add_modules()
-        self.add_routing()
-        self.add_pin_labels()
+        #self.add_routing()
+        #self.add_pin_labels()
 
     def create_modules(self):
         """ add all the required modules """
+
         c = reload(__import__(OPTS.config.ms_flop))
         self.mod_ms_flop = getattr(c, OPTS.config.ms_flop)
         self.ms_flop = self.mod_ms_flop("ms_flop")
         self.add_mod(self.ms_flop)
-        self.inv = pinv(nmos_width=drc["minwidth_tx"],
-                        beta=parameter["pinv_beta"])
 
-        self.add_mod(self.inv)
         self.nand2 = nand_2(nmos_width=2 * drc["minwidth_tx"])
         self.add_mod(self.nand2)
         self.NAND3 = nand_3(nmos_width=3 * drc["minwidth_tx"])
         self.add_mod(self.NAND3)
 
         # Special gates: 4x Inverter
-        self.inv4 = pinv(nmos_width=4 * drc["minwidth_tx"],
-                         beta=parameter["pinv_beta"])
+        self.inv1 = pinv(nmos_width=drc["minwidth_tx"])
+        self.add_mod(self.inv1)
+        self.inv2 = pinv(nmos_width=2 * drc["minwidth_tx"])
+        self.add_mod(self.inv2)
+        self.inv4 = pinv(nmos_width=4 * drc["minwidth_tx"])
         self.add_mod(self.inv4)
+        self.inv8 = pinv(nmos_width=8 * drc["minwidth_tx"])
+        self.add_mod(self.inv8)
 
         self.nor2 = nor_2(nmos_width=drc["minwidth_tx"])
         self.add_mod(self.nor2)
@@ -129,14 +132,14 @@ class control_logic(design.design):
         self.replica_bitline_gap = self.rail_offset_gap * 2
 
         self.output_port_gap = 3 * drc["minwidth_metal3"]
-        self.logic_height = max(self.replica_bitline.width, 4 * self.inv.height)
+        self.logic_height = max(self.replica_bitline.width, 4 * self.inv1.height)
 
     def add_modules(self):
         """ Place all the modules """
         self.add_msf_control()
         self.set_msf_control_pins()
         self.add_1st_row(self.output_port_gap)
-        self.add_2nd_row(self.output_port_gap + 2 * self.inv.height)
+        self.add_2nd_row(self.output_port_gap + 2 * self.inv1.height)
 
         # Height and width
         self.height = self.logic_height + self.output_port_gap
@@ -164,39 +167,45 @@ class control_logic(design.design):
         temp = ["CSb", "WEb", "OEb", "CS_bar", "CS", "WE_bar",
                 "WE", "OE_bar", "OE", "clk", "vdd", "gnd"]
         self.connect_inst(temp)
-
+        print self.get_layout_pins(self.insts[-1])
+        
+    def set_pin_locations(self,instance_name):
+        pass
+    
     def set_msf_control_pins(self):
+        """ This creates labels of all the pins in the control logic FFs """
         # msf_control inputs
         correct = vector(0, 0.5 * drc["minwidth_metal2"])
         def translate_inputs(pt1,pt2):
+            """ Translate the control signal outputs """
             return pt1 + pt2.rotate_scale(1,-1) - correct
 
-        # msf_control outputs
         def translate_outputs(pt1,pt2):
+            """ Translate the control signal inputs """
             return pt1 - correct + vector(self.msf_control.height,- pt2.x)
 
-        # set CSS WE OE signal groups(in, out, bar)
+        # set CS WE OE signal groups(in, out, bar)
         pt1 = self.offset_msf_control
         pin_set = ["CSb","WEb","OEb"]
-        pt2in = self.msf_control.din_positions[0:len(pin_set)]
-        pt2out = self.msf_control.dout_positions[0:len(pin_set)]
-        pt2bar = self.msf_control.dout_bar_positions[0:len(pin_set)]
+        in_pos = self.msf_control.din_positions[0:len(pin_set)]
+        out_pos = self.msf_control.dout_positions[0:len(pin_set)]
+        outbar_pos = self.msf_control.dout_bar_positions[0:len(pin_set)]
         for i in range(len(pin_set)):
-            value = translate_inputs(pt1,pt2in[i])
-            setattr(self,"msf_control_"+pin_set[i]+"_position",value)
-            value = translate_outputs(pt1,pt2out[i])
-            setattr(self,"msf_control_"+pin_set[i][0:2]+"_bar_position",value)
-            value = translate_outputs(pt1,pt2bar[i])
-            setattr(self,"msf_control_"+pin_set[i][0:2]+"_position",value)
+            value = translate_inputs(pt1,in_pos[i])
+            setattr(self,"msf_control_"+pin_set[i]+"_in_position",value)
+            value = translate_outputs(pt1,out_pos[i])
+            setattr(self,"msf_control_"+pin_set[i][0:2]+"_bar_out_position",value)
+            value = translate_outputs(pt1,outbar_pos[i])
+            setattr(self,"msf_control_"+pin_set[i][0:2]+"_out_position",value)
 
-        # clk , vdd
+        # clk , vdd are metal1 horizontal
         base = self.offset_msf_control - vector(0.5 * drc["minwidth_metal2"], 0)
         msf_clk = self.msf_control.clk_positions[0].rotate_scale(1,-1) 
         self.msf_control_clk_position = base + msf_clk
         msf_vdd = self.msf_control.vdd_positions[0].rotate_scale(1,-1) 
         self.msf_control_vdd_position = base + msf_vdd 
 
-        # gnd
+        # gnd is metal2 vertical
         self.msf_control_gnd_positions = []
         for gnd_offset in self.msf_control.gnd_positions:
             offset = self.offset_msf_control + vector(self.msf_control.height, 
@@ -206,16 +215,32 @@ class control_logic(design.design):
     def add_1st_row(self,y_off):
         # inv1 with clk as gate input.
         msf_control_rotate_x = self.offset_msf_control.x + self.msf_control.height 
-        self.offset_inv1 = vector(msf_control_rotate_x - self.inv4.width, y_off)
-        self.add_inst(name="clk_inverter",
-                      mod=self.inv4,
+        self.offset_inv8 = vector(msf_control_rotate_x - self.inv8.width, y_off)        
+        self.offset_inv4 = vector(self.offset_inv8.x - self.inv4.width, y_off)
+        self.offset_inv2 = vector(self.offset_inv4.x - self.inv2.width, y_off)
+        self.offset_inv1 = vector(self.offset_inv2.x - self.inv1.width, y_off)
+        self.add_inst(name="clk_inverter1",
+                      mod=self.inv1,
                       offset=self.offset_inv1)
-        self.connect_inst(["clk", "clk_bar", "vdd", "gnd"])
+        self.connect_inst(["clk", "clk_bar1", "vdd", "gnd"])
+        self.add_inst(name="clk_inverter4",
+                      mod=self.inv2,
+                      offset=self.offset_inv2)
+        self.connect_inst(["clk_bar1", "clk1", "vdd", "gnd"])
+        self.add_inst(name="clk_inverter8",
+                      mod=self.inv4,
+                      offset=self.offset_inv4)
+        self.connect_inst(["clk1", "clk_bar2", "vdd", "gnd"])
+        self.add_inst(name="clk_inverter16",
+                      mod=self.inv8,
+                      offset=self.offset_inv8)
+        self.connect_inst(["clk_bar2", "clk_buf", "vdd", "gnd"])
+        
         # set pin offset as attr
-        self.inv1_A_position = self.offset_inv1 + self.inv4.A_position.scale(0,1)
-        base = self.offset_inv1 + vector(self.inv4.width, 0)
+        self.inv1_A_position = self.offset_inv1 + self.inv1.A_position.scale(0,1)
+        base = self.offset_inv1 + vector(self.inv1.width, 0)
         for pin in ["Z_position", "vdd_position", "gnd_position"]:
-            setattr(self, "inv1_"+pin, base + getattr(self.inv4, pin).scale(0,1))
+            setattr(self, "inv1_"+pin, base + getattr(self.inv1, pin).scale(0,1))
 
         # nor2
         self.offset_nor2 = vector(self.nor2.width + 2 * drc["minwidth_metal3"],
@@ -240,7 +265,7 @@ class control_logic(design.design):
         self.set_nand2_nor2_pin("nand2",[1,1])
 
         # REPLICA BITLINE
-        base_x = self.nand_array_position.x + self.NAND3.width + 3 * self.inv.width
+        base_x = self.nand_array_position.x + self.NAND3.width + 3 * self.inv1.width
         total_rail_gap = self.rail_offset_gap + self.overall_rail_2_gap
         x_off = base_x + total_rail_gap + self.replica_bitline_gap
         self.offset_replica_bitline = vector(x_off, y_off)
@@ -253,18 +278,18 @@ class control_logic(design.design):
 
         # BUFFER INVERTERS FOR S_EN
         # inv_4 input: input: pre_s_en_bar, output: s_en
-        self.offset_inv4 = vector(base_x - 2 * self.inv.width, y_off)
+        self.offset_inv4 = vector(base_x - 2 * self.inv1.width, y_off)
         self.add_inst(name="inv_s_en1",
-                      mod=self.inv,
+                      mod=self.inv1,
                       offset=self.offset_inv4,
                       mirror="MY")
         self.connect_inst(["pre_s_en_bar", "s_en",  "vdd", "gnd"])
         self.set_inv2345_pins(inv_name="inv4", inv_scale=[-1, 1])
 
         # inv_5 input: pre_s_en, output: pre_s_en_bar
-        self.offset_inv5 = vector(base_x - self.inv.width, y_off)
+        self.offset_inv5 = vector(base_x - self.inv1.width, y_off)
         self.add_inst(name="inv_s_en2",
-                      mod=self.inv,
+                      mod=self.inv1,
                       offset=self.offset_inv5,
                       mirror="MY")
         self.connect_inst(["pre_s_en", "pre_s_en_bar",  "vdd", "gnd"])
@@ -298,7 +323,7 @@ class control_logic(design.design):
         self.set_Nand3_pins(nand_name = "nand3_2",nand_scale = [0,1])
 
         # connect nand2 and nand3 to inv
-        nand3_to_inv_connection_height = self.NAND3.Z_position.y- self.inv.A_position.y+ drc["minwidth_metal1"]
+        nand3_to_inv_connection_height = self.NAND3.Z_position.y- self.inv1.A_position.y+ drc["minwidth_metal1"]
         self.add_rect(layer="metal1",
                       offset=self.nand3_1_Z_position,
                       width=drc["minwidth_metal1"],
@@ -312,7 +337,7 @@ class control_logic(design.design):
         x_off = self.nand_array_position.x + self.NAND3.width
         self.offset_inv2 = vector(x_off, y_off)
         self.add_inst(name="inv_rblk",
-                      mod=self.inv,
+                      mod=self.inv1,
                       offset=self.offset_inv2,
                       mirror="MX")
         self.connect_inst(["rblk_bar", "rblk",  "vdd", "gnd"])
@@ -322,7 +347,7 @@ class control_logic(design.design):
         # inv_3 input: w_en_bar, output: pre_w_en
         self.offset_inv3 = self.offset_inv2 
         self.add_inst(name="inv_w_en",
-                      mod=self.inv,
+                      mod=self.inv1,
                       offset=self.offset_inv3,
                       mirror="RO")
         self.connect_inst(["w_en_bar", "pre_w_en",  "vdd", "gnd"])
@@ -330,24 +355,24 @@ class control_logic(design.design):
         self.set_inv2345_pins(inv_name="inv3", inv_scale=[1, 1])
 
         # BUFFER INVERTERS FOR W_EN
-        x_off = self.nand_array_position.x + self.NAND3.width + self.inv.width
+        x_off = self.nand_array_position.x + self.NAND3.width + self.inv1.width
         self.offset_inv6 = vector(x_off, y_off)
         self.add_inst(name="inv_w_en1",
-                      mod=self.inv,
+                      mod=self.inv1,
                       offset=self.offset_inv6,
                       mirror="RO")
         self.connect_inst(["pre_w_en", "pre_w_en1",  "vdd", "gnd"])
 
-        x_off = self.nand_array_position.x + self.NAND3.width + 2 * self.inv.width
+        x_off = self.nand_array_position.x + self.NAND3.width + 2 * self.inv1.width
         self.offset_inv7 = [x_off,  y_off]
         self.add_inst(name="inv_w_en2",
-                      mod=self.inv,
+                      mod=self.inv1,
                       offset=self.offset_inv7,
                       mirror="RO")
         self.connect_inst(["pre_w_en1", "w_en",  "vdd", "gnd"])
         # set pin offset as attr
-        self.inv7_Z_position = self.offset_inv7 + vector(self.inv.width,
-                                                         self.inv.Z_position[1])
+        self.inv7_Z_position = self.offset_inv7 + vector(self.inv1.width,
+                                                         self.inv1.Z_position[1])
 
     def set_nand2_nor2_pin(self,mod,scale):
         offset = getattr (self, "offset_"+mod)
@@ -376,15 +401,16 @@ class control_logic(design.design):
         base_xy = getattr(self, "offset_"+inv_name)
         correct= vector(0, (1-inv_scale[1]) * 0.5 * drc["minwidth_metal1"])
         # pin A
-        pin_xy = vector(0, self.inv4.A_position.y).scale(0,inv_scale[1])
+        pin_xy = vector(0, self.inv1.A_position.y).scale(0,inv_scale[1])
         setattr(self, inv_name+"_A_position", base_xy + pin_xy - correct)
         # Z, vdd, gnd
         for pin in ["Z_position", "vdd_position", "gnd_position"]:
-            pin_xy = getattr(self.inv, pin).scale(0,inv_scale[1])
-            rotated_pin_xy = vector(self.inv.width * inv_scale[0], 0) + pin_xy 
+            pin_xy = getattr(self.inv1, pin).scale(0,inv_scale[1])
+            rotated_pin_xy = vector(self.inv1.width * inv_scale[0], 0) + pin_xy 
             setattr(self, inv_name+"_"+pin, base_xy + rotated_pin_xy - correct)
 
     def add_msf_control_routing(self):
+        """ Route the control flops """
         # FIRST RAIL : MSF_CONTROL OUTPUT RAIL
         rail1_start = vector(self.msf_control_WE_position.x, 
                              self.output_port_gap)
@@ -398,7 +424,7 @@ class control_logic(design.design):
             self.rail_1_x_offsets.append(offset.x)
 
         rail2_start_x = (self.nand_array_position.x + self.NAND3.width 
-                             + 3 * self.inv.width + self.rail_offset_gap)
+                             + 3 * self.inv1.width + self.rail_offset_gap)
         for i in range(self.num_rails_2):
             offset = vector(rail2_start_x + i * self.rail_offset_gap,
                             self.output_port_gap)

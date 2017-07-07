@@ -37,6 +37,7 @@ class control_logic_test(unittest.TestCase):
 
         a.sp_write(tempspice)
         a.gds_write(tempgds)
+        a.gds_write("control.gds")
 
         self.assertFalse(calibre.run_drc(a.name, tempgds))
         self.assertFalse(calibre.run_lvs(a.name, tempgds, tempspice))

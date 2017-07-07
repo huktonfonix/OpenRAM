@@ -21,9 +21,9 @@ class layout:
         self.name = name
         self.width = None
         self.height = None
-        self.insts = []  # Holds module/cell layout instances
-        self.objs = []  # Holds all other objects (labels, geometries, etc)
-
+        self.insts = []      # Holds module/cell layout instances
+        self.objs = []       # Holds all other objects (labels, geometries, etc)
+        self.pin_map = {}    # Holds name->(vector,layer) map for all pins
         self.visited = False # Flag for traversing the hierarchy 
 
         self.gds_read()
@@ -99,14 +99,10 @@ class layout:
         for inst in self.insts:
             inst.offset = vector(inst.offset - coordinate)
 
-    # FIXME: Make name optional and pick a random one if not specified
     def add_inst(self, name, mod, offset=[0,0], mirror="R0",rotate=0):
         """Adds an instance of a mod to this module"""
         self.insts.append(geometry.instance(name, mod, offset, mirror, rotate))
-        message = []
-        for x in self.insts:
-            message.append(x.name)
-        debug.info(4, "adding instance" + ",".join(message))
+        debug.info(4, "adding instance" + ",".join(x.name for x in self.insts))
 
     def add_rect(self, layer, offset, width, height):
         """Adds a rectangle on a given layer,offset with width and height"""
@@ -114,7 +110,8 @@ class layout:
         layerNumber = techlayer[layer]
         if layerNumber >= 0:
             self.objs.append(geometry.rectangle(layerNumber, offset, width, height))
-
+        
+                         
     def add_layout_pin(self, text, layer, offset, width, height):
         """Create a labeled pin"""
         self.add_rect(layer=layer,
@@ -124,7 +121,7 @@ class layout:
         self.add_label(text=text,
                        layer=layer,
                        offset=offset)
-
+        self.pin_map[text] = (vector(offset[0]+width/2.0,offset[1]+height/2.0),layer)
 
     def add_label(self, text, layer, offset=[0,0],zoom=-1):
         """Adds a text label on the given layer,offset, and zoom level"""
