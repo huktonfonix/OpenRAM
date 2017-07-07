@@ -112,8 +112,12 @@ class layout:
             self.objs.append(geometry.rectangle(layerNumber, offset, width, height))
         
                          
-    def add_layout_pin(self, text, layer, offset, width, height):
+    def add_layout_pin(self, text, layer, offset, width=None, height=None):
         """Create a labeled pin"""
+        if width==None:
+            width=drc["minwidth_{0}".format(layer)]
+        if height==None:
+            height=drc["minwidth_{0}".format(layer)]
         self.add_rect(layer=layer,
                       offset=offset,
                       width=width,

@@ -23,7 +23,6 @@ class bitcell_array(design.design):
 
         c = reload(__import__(OPTS.config.bitcell))
         self.mod_bitcell = getattr(c, OPTS.config.bitcell)
-        self.bitcell_chars = self.mod_bitcell.chars
 
         self.add_pins()
         self.create_layout()
@@ -72,76 +71,70 @@ class bitcell_array(design.design):
                     tempy = yoffset
                     dir_key = "R0"
 
-                if OPTS.trim_noncritical == True:
-                    if row == self.row_size - 1:
-                        self.add_inst(name=name,
-                                      mod=self.cell,
-                                      offset=[xoffset, tempy],
-                                      mirror=dir_key)
-                        self.connect_inst(["bl[{0}]".format(col),
-                                           "br[{0}]".format(col),
-                                           "wl[{0}]".format(row),
-                                           "vdd",
-                                           "gnd"])
-                else:
-                    self.add_inst(name=name,
-                                  mod=self.cell,
-                                  offset=[xoffset, tempy],
-                                  mirror=dir_key)
-                    self.connect_inst(["bl[{0}]".format(col),
-                                       "br[{0}]".format(col),
-                                       "wl[{0}]".format(row),
-                                       "vdd",
-                                       "gnd"])
+                self.add_inst(name=name,
+                              mod=self.cell,
+                              offset=[xoffset, tempy],
+                              mirror=dir_key)
+                self.connect_inst(["bl[{0}]".format(col),
+                                   "br[{0}]".format(col),
+                                   "wl[{0}]".format(row),
+                                   "vdd",
+                                   "gnd"])
                 yoffset += self.cell.height
             xoffset += self.cell.width
 
     def add_labels(self):
+        bitcell_pins = self.cell.pins
         offset = vector(0.0, 0.0)
         for col in range(self.column_size):
-            offset.y = 0.0
-            self.add_label(text="bl[{0}]".format(col),
-                           layer="metal2",
-                           offset=offset + vector(self.bitcell_chars["BL"][0],0))
-            self.add_label(text="br[{0}]".format(col),
-                           layer="metal2",
-                           offset=offset + vector(self.bitcell_chars["BR"][0],0))
-            self.BL_positions.append(offset + vector(self.bitcell_chars["BL"][0],0))
-            self.BR_positions.append(offset + vector(self.bitcell_chars["BR"][0],0))
+            self.add_layout_pin(text="bl[{0}]".format(col),
+                                layer="metal2",
+                                offset=offset + vector(bitcell_pins["BL"].ll()[0],0),
+                                width=bitcell_pins["BL"].width(),
+                                height=self.cell.height*self.row_size)
+            self.add_layout_pin(text="br[{0}]".format(col),
+                                layer="metal2",
+                                offset=offset + vector(bitcell_pins["BR"].ll()[0],0),
+                                width=bitcell_pins["BL"].width(),
+                                height=self.cell.height*self.row_size)
 
             # gnd offset is 0 in our cell, but it be non-zero
-            self.add_label(text="gnd", 
-                           layer="metal2",
-                           offset=offset + vector(self.bitcell_chars["gnd"][0],0))
-            self.gnd_positions.append(offset + vector(self.bitcell_chars["gnd"][0],0))
-
-            for row in range(self.row_size):
-                # only add row labels on the left most column
-                if col == 0:
-                    # flipped row
-                    if row % 2:
-                        base_offset = offset + vector(0, self.cell.height)
-                        vdd_offset = base_offset - vector(0,self.bitcell_chars["vdd"][1])
-                        wl_offset =  base_offset - vector(0,self.bitcell_chars["WL"][1])
-                    # unflipped row
-                    else:
-                        vdd_offset = offset + vector(0,self.bitcell_chars["vdd"][1])
-                        wl_offset = offset + vector(0,self.bitcell_chars["WL"][1])
-                    # add vdd label and offset
-                    self.add_label(text="vdd",
-                                   layer="metal1",
-                                   offset=vdd_offset)
-                    self.vdd_positions.append(vdd_offset)
-                    # add gnd label and offset
-                    self.add_label(text="wl[{0}]".format(row),
-                                   layer="metal1",
-                                   offset=wl_offset)
-                    self.WL_positions.append(wl_offset)
-
-                # increments to the next row height
-                offset.y += self.cell.height
+            self.add_layout_pin(text="gnd", 
+                                layer="metal2",
+                                offset=offset + bitcell_pins["gnd"].ll(),
+                                width=bitcell_pins["gnd"].width(),
+                                height=self.cell.height*self.row_size)
+            self.gnd_positions.append(offset + vector(bitcell_pins["gnd"].ll()[0],0))
             # increments to the next column width
             offset.x += self.cell.width
+
+        offset.x = 0.0
+        for row in range(self.row_size):
+            # flipped row
+            if row % 2:
+                base_offset = offset + vector(0, self.cell.height)
+                vdd_offset = base_offset - vector(0,bitcell_pins["vdd"].ur()[1])
+                wl_offset =  base_offset - vector(0,bitcell_pins["WL"].ur()[1])
+            # unflipped row
+            else:
+                vdd_offset = offset + vector(0,bitcell_pins["vdd"].ll()[1])
+                wl_offset = offset + vector(0,bitcell_pins["WL"].ll()[1])
+            # add vdd label and offset
+            self.add_layout_pin(text="vdd",
+                                layer="metal1",
+                                offset=vdd_offset,
+                                width=self.cell.width*self.column_size,
+                                height=drc["minwidth_metal1"])
+            self.vdd_positions.append(vdd_offset)
+            # add wl label and offset
+            self.add_layout_pin(text="wl[{0}]".format(row),
+                                layer="metal1",
+                                offset=wl_offset,
+                                width=self.cell.width*self.column_size,
+                                height=drc["minwidth_metal1"])
+
+            # increments to the next row height
+            offset.y += self.cell.height
 
     def delay(self, slew, load=0):
         from tech import drc

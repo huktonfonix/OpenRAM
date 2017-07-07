@@ -40,13 +40,6 @@ class ms_flop_array(design.design):
         self.height = self.ms_flop.height
         self.words_per_row = self.columns / self.word_size
 
-        self.flop_positions = []
-        self.vdd_positions = []
-        self.gnd_positions = []
-        self.clk_positions = []
-        self.dout_positions = []
-        self.dout_bar_positions = []
-        self.din_positions = []
 
     def add_pins(self):
         for i in range(self.word_size):
@@ -79,7 +72,6 @@ class ms_flop_array(design.design):
                                "dout_bar[{0}]".format(i),
                                "clk",
                                "vdd", "gnd"])
-            self.flop_positions.append(vector(x_off, 0))
 
     def add_labels(self):
         
@@ -115,7 +107,6 @@ class ms_flop_array(design.design):
                             offset=[0, flop_pins["clk"].ll()[1]],
                             width=self.width,
                             height=drc["minwidth_metal1"])
-        self.clk_positions.append(flop_pins["clk"].center())
 
         # Continous "Vdd" rail along with label.
         self.add_layout_pin(text="vdd",
@@ -123,7 +114,6 @@ class ms_flop_array(design.design):
                             offset=[0, flop_pins["vdd"].center()[1] - 0.5 * drc["minwidth_metal1"]],
                             width=self.width,
                             height=drc["minwidth_metal1"])
-        self.vdd_positions.append(flop_pins["vdd"].ll().scale(0, 1))
 
 
     def delay(self, slew, load=0.0):
