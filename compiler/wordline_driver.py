@@ -58,25 +58,14 @@ class wordline_driver(design.design):
         self.width = self.x_offset2 + self.inv.width
         self.height = self.inv.height * self.rows
 
-        # Defining offset postions
-        self.decode_out_positions = []
-        self.clk_positions = []
-        self.WL_positions = []
-        self.vdd_positions = []
-        self.gnd_positions = []
-
     def create_layout(self):
         # Clk connection
-        self.add_rect(layer="metal1",
-                      offset=[drc["minwidth_metal1"] + 2 * drc["metal1_to_metal1"],
-                              2 * drc["minwidth_metal1"]],
-                      width=drc["minwidth_metal1"],
-                      height=self.height + 4*drc["minwidth_metal1"])
-        self.clk_positions.append([drc["minwidth_metal1"] + 2*drc["metal1_to_metal1"],
-                                           self.height])
-        self.add_label(text="clk",
-                       layer="metal1",
-                       offset=self.clk_positions[0])
+        self.add_layout_pin(text="clk",
+                            layer="metal1",
+                            offset=[drc["minwidth_metal1"] + 2 * drc["metal1_to_metal1"],
+                                    2 * drc["minwidth_metal1"]],
+                            width=drc["minwidth_metal1"],
+                            height=self.height + 4*drc["minwidth_metal1"])
 
         for row in range(self.rows):
             name_inv1 = "Wordline_driver_inv_clk%d" % (row)
@@ -97,9 +86,9 @@ class wordline_driver(design.design):
                           offset=[self.x_offset0 + drc["minwidth_metal1"],
                                   yoffset],
                           mirror="R90")
-            inv_nand2B_connection_height = (abs(self.inv.Z_position.y 
-                                                    - self.NAND2.B_position.y)
-                                                + drc["minwidth_metal1"])
+            inv_nand2B_connection_height = (abs(self.inv.get_pin("Z").ll().y 
+                                                - self.NAND2.get_pin("B").ll().y)
+                                            + drc["minwidth_metal1"])
 
             if (row % 2):
                 y_offset = self.inv.height*(row + 1)
@@ -147,46 +136,46 @@ class wordline_driver(design.design):
 
             # clk connection
             clk_offset= [drc["minwidth_metal1"] + 2 * drc["metal1_to_metal1"],
-                         y_offset + cell_dir.y * self.inv.A_position.y]
+                         y_offset + cell_dir.y * self.inv.get_pin("A").ly()]
             self.add_rect(layer="metal1",
                           offset=clk_offset,
                           width=self.x_offset0 - 2*drc["metal1_to_metal1"],
                           height=cell_dir.y *drc["minwidth_metal1"])
             # first inv to nand2 B
             inv_to_nand2B_offset = [self.x_offset1 - drc["minwidth_metal1"],
-                                  y_offset + cell_dir.y * self.NAND2.B_position.y]
+                                  y_offset + cell_dir.y * self.NAND2.get_pin("B").ly()]
             self.add_rect(layer="metal1",
                           offset=inv_to_nand2B_offset,
                           width=drc["minwidth_metal1"],
                           height=cell_dir.y*inv_nand2B_connection_height)
             # Nand2 out to 2nd inv
             nand2_to_2ndinv_offset =[self.x_offset2,
-                                  y_offset + cell_dir.y * self.NAND2.Z_position.y]
+                                  y_offset + cell_dir.y * self.NAND2.get_pin("Z").ly()]
             self.add_rect(layer="metal1",
                           offset=nand2_to_2ndinv_offset,
                           width=drc["minwidth_metal1"],
                           height=cell_dir.y * drc["minwidth_metal1"])
             # nand2 A connection
             self.add_rect(layer="metal2",
-                          offset=[0, y_offset + cell_dir.y * self.NAND2.A_position.y],
+                          offset=[0, y_offset + cell_dir.y * self.NAND2.get_pin("A").ly()],
                           width=self.x_offset1,
                           height=cell_dir.y*drc["minwidth_metal2"])
             self.add_via(layers=("metal1", "via1", "metal2"),
                           offset=[self.x_offset1,
-                                  y_offset + cell_dir.y * self.NAND2.A_position.y],
+                                  y_offset + cell_dir.y * self.NAND2.get_pin("A").ly()],
                           rotate=m1tm2_rotate,
                           mirror=m1tm2_mirror)
             self.add_via(layers=("metal1", "via1", "metal2"),
                           offset=[0, 
-                                  y_offset +cell_dir.y*self.NAND2.A_position.y],
+                                  y_offset +cell_dir.y*self.NAND2.get_pin("A").ly()],
                           mirror=inst_mirror)
 
 
             base_offset = vector(self.width, y_offset)
-            decode_out_offset = base_offset.scale(0,1)+self.NAND2.A_position.scale(cell_dir)
-            wl_offset = base_offset + self.inv.Z_position.scale(cell_dir)
-            vdd_offset = base_offset + self.inv.vdd_position.scale(cell_dir)
-            gnd_offset = base_offset + self.inv.gnd_position.scale(cell_dir)
+            decode_out_offset = base_offset.scale(0,1)+self.NAND2.get_pin("A").ll().scale(cell_dir)
+            wl_offset = base_offset + self.inv.get_pin("Z").ll().scale(cell_dir)
+            vdd_offset = base_offset + self.inv.get_pin("vdd").ll().scale(cell_dir)
+            gnd_offset = base_offset + self.inv.get_pin("gnd").ll().scale(cell_dir)
 
             self.add_label(text="decode_out[{0}]".format(row),
                            layer="metal2",
@@ -205,10 +194,6 @@ class wordline_driver(design.design):
                            layer="metal1",
                            offset=vdd_offset)
 
-            self.decode_out_positions.append(decode_out_offset)
-            self.WL_positions.append(wl_offset)
-            self.vdd_positions.append(vdd_offset)
-            self.gnd_positions.append(gnd_offset)
 
     def delay(self, slew, load=0):
         # decode_out -> net

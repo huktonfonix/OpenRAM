@@ -6,6 +6,7 @@ from tech import drc, GDS
 from tech import layer as techlayer
 import os
 from vector import vector
+from pin_layout import pin_layout
 
 class layout:
     """
@@ -112,6 +113,9 @@ class layout:
             self.objs.append(geometry.rectangle(layerNumber, offset, width, height))
         
                          
+    def get_pin(self, text):
+        return self.pin_map[text]
+    
     def add_layout_pin(self, text, layer, offset, width=None, height=None):
         """Create a labeled pin"""
         if width==None:
@@ -125,7 +129,7 @@ class layout:
         self.add_label(text=text,
                        layer=layer,
                        offset=offset)
-        self.pin_map[text] = (vector(offset[0]+width/2.0,offset[1]+height/2.0),layer)
+        self.pin_map[text] = pin_layout(text,vector(offset,offset+vector(width,height)),layer)
 
     def add_label(self, text, layer, offset=[0,0],zoom=-1):
         """Adds a text label on the given layer,offset, and zoom level"""
