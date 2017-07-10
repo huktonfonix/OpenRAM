@@ -21,7 +21,7 @@ class bitcell(design.design):
 
         self.width = bitcell.width
         self.height = bitcell.height
-        self.pins = bitcell.pin_map
+        self.pin_map = bitcell.pin_map
 
     def delay(self, slew, load=0, swing = 0.5):
         # delay of bit cell is not like a driver(from WL)

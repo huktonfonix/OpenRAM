@@ -20,6 +20,15 @@ class pin_layout:
     def center(self):
         return vector(0.5*(self.rect[0].x+self.rect[1].x),0.5*(self.rect[0].y+self.rect[1].y))
 
+    def cx(self):
+        """ Center x """
+        return 0.5*(self.rect[0].x+self.rect[1].x)
+
+    def cy(self):
+        """ Center y """
+        return 0.5*(self.rect[0].y+self.rect[1].y)
+    
+    
     def ll(self):
         """ Lower left point """
         return self.rect[0]

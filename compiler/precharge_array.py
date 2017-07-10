@@ -19,6 +19,14 @@ class precharge_array(design.design):
         self.ptx_width = ptx_width
         self.beta = beta
 
+        self.pc_cell = precharge(name="precharge_cell",
+                                 ptx_width=self.ptx_width,
+                                 beta=self.beta)
+        self.add_mod(self.pc_cell)
+
+        self.width = self.columns * self.pc_cell.width
+        self.height = self.pc_cell.height
+
         self.add_pins()
         self.create_layout()
         self.DRC_LVS()
@@ -32,46 +40,23 @@ class precharge_array(design.design):
         self.add_pin("vdd")
 
     def create_layout(self):
-        self.create_pc_cell()
-        self.setup_layout_constants()
-        self.add_pc()
-        self.add_rails()
-        self.offset_all_coordinates()
+        self.add_insts()
 
-    def setup_layout_constants(self):
-        self.vdd_positions = []
-        self.BL_positions = []
-        self.BR_positions = []
-
-        self.width = self.columns * self.pc_cell.width
-        self.height = self.pc_cell.height
-
-    def add_rails(self):
-        self.add_vdd_rail()
-        self.add_pclk_rail()
-
-    def add_vdd_rail(self):
         self.add_layout_pin(text="vdd",
                             layer="metal1",
-                            offset=self.pc_cell.vdd_position,
+                            offset=self.pc_cell.get_pin("vdd").ll(),
                             width=self.width,
                             height=drc["minwidth_metal1"])
-
-    def add_pclk_rail(self):
+        
         self.add_layout_pin(text="clk",
                             layer="metal1",
-                            offset=self.pc_cell.pclk_position,
+                            offset=self.pc_cell.get_pin("clk").ll(),
                             width=self.width,
                             height=drc["minwidth_metal1"])
+        
+        #self.offset_all_coordinates()
 
-    def create_pc_cell(self):
-        """Initializes a single precharge cell"""
-        self.pc_cell = precharge(name="precharge_cell",
-                                 ptx_width=self.ptx_width,
-                                 beta=self.beta)
-        self.add_mod(self.pc_cell)
-
-    def add_pc(self):
+    def add_insts(self):
         """Creates a precharge array by horizontally tiling the precharge cell"""
         self.pc_cell_positions = []
         for i in range(self.columns):
@@ -81,14 +66,12 @@ class precharge_array(design.design):
             self.add_inst(name=name,
                           mod=self.pc_cell,
                           offset=offset)
-            self.add_label(text="bl[{0}]".format(i),
-                           layer="metal2",
-                           offset=offset+ self.pc_cell.BL_position.scale(1,0))
-            self.add_label(text="br[{0}]".format(i),
-                           layer="metal2",
-                           offset=offset+ self.pc_cell.BR_position.scale(1,0))
+            self.add_layout_pin(text="BL[{0}]".format(i),
+                                layer="metal2",
+                                offset=offset+ self.pc_cell.get_pin("BL").ll().scale(1,0))
+            self.add_layout_pin(text="BR[{0}]".format(i),
+                                layer="metal2",
+                                offset=offset+ self.pc_cell.get_pin("BR").ll().scale(1,0))
             self.connect_inst(["bl[{0}]".format(i), "br[{0}]".format(i),
                                "clk", "vdd"])
 
-            self.BL_positions.append(offset + self.pc_cell.BL_position.scale(1,0))
-            self.BR_positions.append(offset + self.pc_cell.BR_position.scale(1,0))
