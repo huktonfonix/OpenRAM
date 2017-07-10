@@ -11,6 +11,14 @@ class pin_layout:
         self.rect = rect
         self.layer = layer
 
+    def __str__(self):
+        """ override print function output """
+        return "({} layer={} ll={} ur={})".format(self.name,self.layer,self.rect[0],self.rect[1])
+
+    def __repr__(self):
+        """ override print function output """
+        return "({} layer={} ll={} ur={})".format(self.name,self.layer,self.rect[0],self.rect[1])
+        
     def height(self):
         return self.rect[1].y-self.rect[0].y
     

@@ -89,7 +89,8 @@ def get_libcell_pins(pin_list, name, units, layer):
     for pin in pin_list:
         (name,layer,boundary)=cell_vlsi.getPinShapeByLabel(str(pin))
         rect = pin_rect(boundary)
-        cell[str(pin)] = pin_layout(pin, rect, layer)
+        # this is a list because other cells/designs may have must-connect pins
+        cell[str(pin)] = [pin_layout(pin, rect, layer)]
     return cell
 
 
