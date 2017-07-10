@@ -273,7 +273,7 @@ class precharge(design.design):
         """Connects bit-lines to lower_pmos"""
         mos,mos_pos,contact = dest
         mos_active = (mos_pos + mos.active_contact_positions[0])
-        offset = vector(self.bitcell.get_pin("BL").lx() , mos_active.y)
+        offset = vector(self.bitcell.get_pin("BL").cx() , mos_active.y)
         xlength = (mos_active.x + correct_x - offset.x 
                        + 0.5 * drc["minwidth_metal2"])
         self.add_rect(layer="metal2",
@@ -286,7 +286,7 @@ class precharge(design.design):
         mos,mos_pos,contact = dest
         offset = mos_pos + vector(correct_x,
                                   mos.active_contact_positions[0].y)
-        xlength = self.bitcell.get_pin("BR").lx() - offset.x - 0.5 * drc["minwidth_metal2"] 
+        xlength = self.bitcell.get_pin("BR").cx() - offset.x - 0.5 * drc["minwidth_metal2"] 
         self.add_rect(layer="metal2",
                       offset=offset,
                       width=xlength,
