@@ -47,9 +47,6 @@ class bitcell_array(design.design):
     def setup_layout_constants(self):
         self.vdd_positions = []
         self.gnd_positions = []
-        self.BL_positions = []
-        self.BR_positions = []
-        self.WL_positions = []
         self.height = self.row_size * self.cell.height
         self.width = self.column_size * self.cell.width
 

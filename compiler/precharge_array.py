@@ -51,19 +51,16 @@ class precharge_array(design.design):
         self.add_pclk_rail()
 
     def add_vdd_rail(self):
-        offset = self.pc_cell.vdd_position
         self.add_layout_pin(text="vdd",
                             layer="metal1",
-                            offset=offset,
+                            offset=self.pc_cell.vdd_position,
                             width=self.width,
                             height=drc["minwidth_metal1"])
-        self.vdd_positions.append(offset)
 
     def add_pclk_rail(self):
-        self.pclk_position = self.pc_cell.pclk_position
         self.add_layout_pin(text="clk",
                             layer="metal1",
-                            offset=self.pclk_position,
+                            offset=self.pc_cell.pclk_position,
                             width=self.width,
                             height=drc["minwidth_metal1"])
 

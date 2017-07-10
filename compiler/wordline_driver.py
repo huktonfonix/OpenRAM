@@ -26,7 +26,7 @@ class wordline_driver(design.design):
     def add_pins(self):
         # inputs to wordline_driver.
         for i in range(self.rows):
-            self.add_pin("decode_out[{0}]".format(i))
+            self.add_pin("decode[{0}]".format(i))
         # Outputs from wordline_driver.
         for i in range(self.rows):
             self.add_pin("wl[{0}]".format(i))
@@ -61,54 +61,59 @@ class wordline_driver(design.design):
     def create_layout(self):
         # Clk connection
         self.add_layout_pin(text="clk",
-                            layer="metal1",
+                            layer="metal2",
                             offset=[drc["minwidth_metal1"] + 2 * drc["metal1_to_metal1"],
                                     2 * drc["minwidth_metal1"]],
-                            width=drc["minwidth_metal1"],
+                            width=drc["minwidth_metal2"],
                             height=self.height + 4*drc["minwidth_metal1"])
-
+        
+        self.add_layout_pin(text="gnd[0]",
+                            layer="metal1",
+                            offset=[0, -0.5*drc["minwidth_metal1"]],
+                            width=self.x_offset0,
+                            height=drc["minwidth_metal1"])
+        
         for row in range(self.rows):
-            name_inv1 = "Wordline_driver_inv_clk%d" % (row)
-            name_nand = "Wordline_driver_nand%d" % (row)
-            name_inv2 = "Wordline_driver_inv%d" % (row)
+            name_inv1 = "Wordline_driver_inv_clk{}".format(row)
+            name_nand = "Wordline_driver_nand{}".format(row)
+            name_inv2 = "Wordline_driver_inv{}".format(row)
 
-            # Extend vdd and gnd of Wordline_driver
-            yoffset = (row + 1) * self.inv.height - 0.5 * drc["minwidth_metal2"]
-            self.add_rect(layer="metal2",
-                          offset=[0, yoffset],
-                          width=self.x_offset0,
-                          height=drc["minwidth_metal2"])
-
-            self.add_via(layers=("metal1", "via1", "metal2"),
-                          offset=[drc["minwidth_metal1"], yoffset],
-                          mirror="R90")
-            self.add_via(layers=("metal1", "via1", "metal2"),
-                          offset=[self.x_offset0 + drc["minwidth_metal1"],
-                                  yoffset],
-                          mirror="R90")
             inv_nand2B_connection_height = (abs(self.inv.get_pin("Z").ll().y 
                                                 - self.NAND2.get_pin("B").ll().y)
                                             + drc["minwidth_metal1"])
 
             if (row % 2):
                 y_offset = self.inv.height*(row + 1)
-                name_inv1_offset = [self.x_offset0, y_offset]
-                nand2_offset=[self.x_offset1, y_offset]
-                inv2_offset=[self.x_offset2, y_offset]
                 inst_mirror = "MX"
                 cell_dir = vector(0,-1)
                 m1tm2_rotate=270
                 m1tm2_mirror="R0"
             else:
                 y_offset = self.inv.height*row
-                name_inv1_offset = [self.x_offset0, y_offset]
-                nand2_offset=[self.x_offset1, y_offset]
-                inv2_offset=[self.x_offset2, y_offset]
                 inst_mirror = "R0"
                 cell_dir = vector(0,1)
                 m1tm2_rotate=90
                 m1tm2_mirror="MX"
 
+            name_inv1_offset = [self.x_offset0, y_offset]
+            nand2_offset=[self.x_offset1, y_offset]
+            inv2_offset=[self.x_offset2, y_offset]
+            base_offset = vector(self.width, y_offset)
+
+            # Extend vdd and gnd of wordline_driver
+            yoffset = (row + 1) * self.inv.height - 0.5 * drc["minwidth_metal1"]
+            if (row % 2):
+                pin_name = "gnd[{0}]".format((row+1)/2)
+            else:
+                pin_name = "vdd[{0}]".format((row+1)/2)
+                
+            self.add_layout_pin(text=pin_name,
+                                layer="metal1",
+                                offset=[0, yoffset],
+                                width=self.x_offset0,
+                                height=drc["minwidth_metal1"])
+            
+            
             # add inv1 based on the info above
             self.add_inst(name=name_inv1,
                           mod=self.inv,
@@ -121,7 +126,7 @@ class wordline_driver(design.design):
                           mod=self.NAND2,
                           offset=nand2_offset,
                           mirror=inst_mirror)
-            self.connect_inst(["decode_out[{0}]".format(row),
+            self.connect_inst(["decode[{0}]".format(row),
                                "clk_bar[{0}]".format(row),
                                "net[{0}]".format(row),
                                "vdd", "gnd"])
@@ -135,12 +140,15 @@ class wordline_driver(design.design):
                                "vdd", "gnd"])
 
             # clk connection
-            clk_offset= [drc["minwidth_metal1"] + 2 * drc["metal1_to_metal1"],
-                         y_offset + cell_dir.y * self.inv.get_pin("A").ly()]
+            clk_offset= vector(drc["minwidth_metal1"] + 2 * drc["metal1_to_metal1"],
+                               y_offset + cell_dir.y * self.inv.get_pin("A").ly())
             self.add_rect(layer="metal1",
                           offset=clk_offset,
                           width=self.x_offset0 - 2*drc["metal1_to_metal1"],
                           height=cell_dir.y *drc["minwidth_metal1"])
+            self.add_via(layers=("metal1", "via1", "metal2"),
+                         offset=clk_offset)
+
             # first inv to nand2 B
             inv_to_nand2B_offset = [self.x_offset1 - drc["minwidth_metal1"],
                                   y_offset + cell_dir.y * self.NAND2.get_pin("B").ly()]
@@ -155,48 +163,44 @@ class wordline_driver(design.design):
                           offset=nand2_to_2ndinv_offset,
                           width=drc["minwidth_metal1"],
                           height=cell_dir.y * drc["minwidth_metal1"])
-            # nand2 A connection
+
+            # connect the decoder input pin to nand2 A
+            input_via_offset=vector(0, y_offset + cell_dir.y*self.NAND2.get_pin("A").ly())
+            mid_via_offset = vector(clk_offset.x,input_via_offset.y) + vector(drc["minwidth_metal2"]+drc["metal2_to_metal2"],0) 
+            # must go over the clk line in M2
+            self.add_via(layers=("metal1", "via1", "metal2"),
+                          offset=input_via_offset,
+                          mirror=inst_mirror)
+            self.add_layout_pin(text="decode[{0}]".format(row),
+                                layer="metal1",
+                                offset=input_via_offset,
+                                width=mid_via_offset.x,
+                                height=cell_dir.y*drc["minwidth_metal1"])
+            self.add_via(layers=("metal1", "via1", "metal2"),
+                          offset=mid_via_offset,
+                          mirror=inst_mirror)
+            # now connect to the nand2 A
             self.add_rect(layer="metal2",
-                          offset=[0, y_offset + cell_dir.y * self.NAND2.get_pin("A").ly()],
-                          width=self.x_offset1,
+                          offset=mid_via_offset,
+                          width=self.x_offset1-mid_via_offset.x,
                           height=cell_dir.y*drc["minwidth_metal2"])
             self.add_via(layers=("metal1", "via1", "metal2"),
                           offset=[self.x_offset1,
                                   y_offset + cell_dir.y * self.NAND2.get_pin("A").ly()],
                           rotate=m1tm2_rotate,
                           mirror=m1tm2_mirror)
-            self.add_via(layers=("metal1", "via1", "metal2"),
-                          offset=[0, 
-                                  y_offset +cell_dir.y*self.NAND2.get_pin("A").ly()],
-                          mirror=inst_mirror)
 
-
-            base_offset = vector(self.width, y_offset)
-            decode_out_offset = base_offset.scale(0,1)+self.NAND2.get_pin("A").ll().scale(cell_dir)
+            # output each WL on the right
             wl_offset = base_offset + self.inv.get_pin("Z").ll().scale(cell_dir)
-            vdd_offset = base_offset + self.inv.get_pin("vdd").ll().scale(cell_dir)
-            gnd_offset = base_offset + self.inv.get_pin("gnd").ll().scale(cell_dir)
-
-            self.add_label(text="decode_out[{0}]".format(row),
-                           layer="metal2",
-                           offset=decode_out_offset)
-            self.add_rect(layer="metal1",
-                          offset=wl_offset,
-                          width=drc["minwidth_metal1"]*cell_dir.y,
-                          height=drc["minwidth_metal1"]*cell_dir.y)
-            self.add_label(text="wl[{0}]".format(row),
-                           layer="metal1",
-                           offset=wl_offset)
-            self.add_label(text="gnd",
-                           layer="metal1",
-                           offset=gnd_offset)
-            self.add_label(text="vdd",
-                           layer="metal1",
-                           offset=vdd_offset)
+            self.add_layout_pin(text="wl[{0}]".format(row),
+                                layer="metal1",
+                                offset=wl_offset,
+                                width=drc["minwidth_metal1"]*cell_dir.y,
+                                height=drc["minwidth_metal1"]*cell_dir.y)
 
 
     def delay(self, slew, load=0):
-        # decode_out -> net
+        # decode -> net
         decode_t_net = self.NAND2.delay(slew, self.inv.input_load())
 
         # net -> wl

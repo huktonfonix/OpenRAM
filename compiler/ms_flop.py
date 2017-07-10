@@ -19,7 +19,7 @@ class ms_flop(design.design):
 
         self.width = ms_flop.width
         self.height = ms_flop.height
-        self.pins = ms_flop.pin_map
+        self.pin_map = ms_flop.pin_map
     
     def delay(self, slew, load = 0.0):
         # dont know how to calculate this now, use constant in tech file

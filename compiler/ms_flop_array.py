@@ -75,43 +75,43 @@ class ms_flop_array(design.design):
 
     def add_labels(self):
         
-        flop_pins = self.ms_flop.pins
+        ms = self.ms_flop
         offsets = {}
         for i in range(self.word_size):
             i_str = "[{0}]".format(i)
             if (i % 2 == 0 or self.words_per_row > 1):
                 base = vector(i * self.ms_flop.width * self.words_per_row, 0)
-                offsets["gnd"+i_str] = base + flop_pins["gnd"].ll()
-                offsets["din"+i_str] = base + flop_pins["din"].ll()
-                offsets["dout"+i_str] = base + flop_pins["dout"].ll()
-                offsets["dout_bar"+i_str] = base + flop_pins["dout_bar"].ll()
+                offsets["gnd"+i_str] = base + ms.get_pin("gnd").ll()
+                offsets["din"+i_str] = base + ms.get_pin("din").ll()
+                offsets["dout"+i_str] = base + ms.get_pin("dout").ll()
+                offsets["dout_bar"+i_str] = base + ms.get_pin("dout_bar").ll()
             else:
                 base = vector((i + 1) * self.ms_flop.width, 0)
-                offsets["gnd"+i_str] = base + flop_pins["gnd"].ll().scale(-1,1)
-                offsets["din"+i_str] = base + flop_pins["din"].ll().scale(-1,1)
-                offsets["dout"+i_str] = base + flop_pins["dout"].ll().scale(-1,1)
-                offsets["dout_bar"+i_str] = base + flop_pins["dout_bar"].ll().scale(-1,1)
+                offsets["gnd"+i_str] = base + ms.get_pin("gnd").ll().scale(-1,1)
+                offsets["din"+i_str] = base + ms.get_pin("din").ll().scale(-1,1)
+                offsets["dout"+i_str] = base + ms.get_pin("dout").ll().scale(-1,1)
+                offsets["dout_bar"+i_str] = base + ms.get_pin("dout_bar").ll().scale(-1,1)
 
 
-            for p in flop_pins.keys():
+            for p in ms.pins:
                 if p=="vdd" or p=="clk": continue
                 self.add_layout_pin(text=p+i_str,
                                     layer="metal2",
                                     offset=offsets[p+i_str],
-                                    width=flop_pins[p].width(),
-                                    height=flop_pins[p].height())
+                                    width=ms.get_pin(p).width(),
+                                    height=ms.get_pin(p).height())
 
         # Continous "clk" rail along with label.
         self.add_layout_pin(text="clk",
                             layer="metal1",
-                            offset=[0, flop_pins["clk"].ll()[1]],
+                            offset=[0, ms.get_pin("clk").ll()[1]],
                             width=self.width,
                             height=drc["minwidth_metal1"])
 
         # Continous "Vdd" rail along with label.
         self.add_layout_pin(text="vdd",
                             layer="metal1",
-                            offset=[0, flop_pins["vdd"].center()[1] - 0.5 * drc["minwidth_metal1"]],
+                            offset=[0, ms.get_pin("vdd").center()[1] - 0.5 * drc["minwidth_metal1"]],
                             width=self.width,
                             height=drc["minwidth_metal1"])
 

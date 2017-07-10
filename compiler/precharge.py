@@ -18,10 +18,13 @@ class precharge(design.design):
 
         c = reload(__import__(OPTS.config.bitcell))
         self.mod_bitcell = getattr(c, OPTS.config.bitcell)
-        self.bitcell_chars = self.mod_bitcell.chars
-
+        self.bitcell = self.mod_bitcell()
+        
         self.ptx_width = ptx_width
         self.beta = beta
+        self.width = self.bitcell.width
+        self.BL_position = self.bitcell.get_pin("BL").ll()
+        self.BR_position = self.bitcell.get_pin("BR").ll()
 
         self.add_pins()
         self.create_layout()
@@ -72,10 +75,6 @@ class precharge(design.design):
         self.lower_contact = contact(layer_stack=("metal1", "via1", "metal2"),
                                      dimensions=self.lower_dimensions)
 
-    def setup_layout_constants(self):
-        self.width = self.bitcell_chars["width"]
-        self.BL_position = vector(self.bitcell_chars["BL"][0], 0)
-        self.BR_position = vector(self.bitcell_chars["BR"][0], 0)
 
     def add_ptx(self):
         """Adds both the upper_pmos and lower_pmos to the module"""
@@ -182,11 +181,11 @@ class precharge(design.design):
     def add_vdd_rail(self):
         """Adds a vdd rail at the top of the cell"""
         # adds the rail across the width of the cell
-        self.vdd_position = vector(self.pclk_position.x,
-                                   self.height - drc["minwidth_metal1"])
+        vdd_position = vector(self.pclk_position.x,
+                              self.height - drc["minwidth_metal1"])
         self.add_layout_pin(text="vdd",
                             layer="metal1",
-                            offset=self.vdd_position,
+                            offset=vdd_position,
                             width=self.width,
                             height=drc["minwidth_metal1"])
 
