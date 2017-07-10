@@ -15,14 +15,14 @@ class hierarchical_predecode(design.design):
     Pre 2x4 and 3x8 decoder shared code.
     """
     def __init__(self, input_number):
-        design.design.__init__(self, name="pre3x8")
+        self.number_of_inputs = input_number
+        self.number_of_outputs = int(math.pow(2, self.number_of_inputs))
+        design.design.__init__(self, name="pre{0}x{1}".format(self.number_of_inputs,self.number_of_outputs))
 
         c = reload(__import__(OPTS.config.bitcell))
         self.mod_bitcell = getattr(c, OPTS.config.bitcell)
         self.bitcell_height = self.mod_bitcell.height
 
-        self.number_of_inputs = input_number
-        self.number_of_outputs = int(math.pow(2, self.number_of_inputs))
     
     def add_pins(self):
         for k in range(self.number_of_inputs):
@@ -67,9 +67,9 @@ class hierarchical_predecode(design.design):
 
     def setup_constraints(self):
         layer_stack = ("metal1", "via1", "metal2")
-        m1m2_via = contact(layer_stack=layer_stack) 
-        self.via_shift = (m1m2_via.second_layer_width - m1m2_via.first_layer_width) / 2
-        self.metal2_extend_contact = (m1m2_via.second_layer_height - m1m2_via.contact_width) / 2
+        self.m1m2_via = contact(layer_stack=layer_stack) 
+        self.via_shift = (self.m1m2_via.second_layer_width - self.m1m2_via.first_layer_width) / 2
+        self.metal2_extend_contact = (self.m1m2_via.second_layer_height - self.m1m2_via.contact_width) / 2
 
         # Contact shift used connecting NAND3 inputs to the rail
         self.contact_shift = (self.m1m2_via.first_layer_width - self.m1m2_via.contact_width) / 2
@@ -114,17 +114,17 @@ class hierarchical_predecode(design.design):
 
     def add_output_inverters(self):
         self.decode_out_positions = []
+        z_pin = self.inv.get_pin("Z")
         for inv_2x4 in range(self.number_of_outputs):
             name = "Xpre2x4_nand_inv[{0}]".format(inv_2x4)
             if (inv_2x4 % 2 == 0):
                 y_factor = inv_2x4 
                 mirror = "R0"
-                correct = self.inv.Z_position       
+                correct = z_pin.ll()
             else:
                 y_factor =inv_2x4 + 1
                 mirror = "MX"   
-                correct = self.inv.Z_position.scale(1,-1) - vector(0, 
-                                                                   drc["minwidth_metal1"])
+                correct = z_pin.ll().scale(1,-1) - vector(0, drc["minwidth_metal1"])
             base = vector(self.x_off_inv_2, self.inv.height * y_factor)   
             self.add_inst(name=name,
                           mod=self.inv,
@@ -137,6 +137,7 @@ class hierarchical_predecode(design.design):
             self.decode_out_positions.append(output_inv_out_offset)
 
     def add_nand(self,connections):
+        z_pin = self.nand.get_pin("Z")
         for nand_input in range(self.number_of_outputs):
             inout = str(self.number_of_inputs)+"x"+str(self.number_of_outputs)
             name = "Xpre"+inout+"_nand[{0}]".format(nand_input)
@@ -144,12 +145,12 @@ class hierarchical_predecode(design.design):
                 y_off = nand_input * (self.nand.height)
                 mirror = "R0"
                 offset = [self.x_off_nand + self.nand.width,
-                          y_off + self.nand.Z_position.y]
+                          y_off + z_pin.ly()]
             else:
                 y_off = (nand_input + 1) * (self.nand.height)
                 mirror = "MX"
                 offset =[self.x_off_nand + self.nand.width,
-                         y_off - self.nand.Z_position.y - drc["minwidth_metal1"]]
+                         y_off - z_pin.ly() - drc["minwidth_metal1"]]
             self.add_inst(name=name,
                           mod=self.nand,
                           offset=[self.x_off_nand, y_off],
@@ -218,10 +219,10 @@ class hierarchical_predecode(design.design):
         else:
             base_offset=[self.x_off_inv_1, 2 * self.inv.height - drc["minwidth_metal1"]]
             y_dir = -1
-        inv_out_offset = base_offset+self.inv.Z_position.scale(1,y_dir)
-        inv_in_offset = base_offset+self.inv.A_position.scale(1,y_dir)
-        inv_vdd_offset = base_offset+self.inv.vdd_position.scale(1,y_dir)
-        inv_gnd_offset = base_offset+self.inv.gnd_position.scale(1,y_dir)
+        inv_out_offset = base_offset+self.inv.get_pin("Z").ll().scale(1,y_dir)
+        inv_in_offset = base_offset+self.inv.get_pin("A").ll().scale(1,y_dir)
+        inv_vdd_offset = base_offset+self.inv.get_pin("vdd").ll().scale(1,y_dir)
+        inv_gnd_offset = base_offset+self.inv.get_pin("gnd").ll().scale(1,y_dir)
         #return info to create output of the input inverter
         return [y_dir,inv_in_offset,inv_out_offset,inv_vdd_offset,inv_gnd_offset]
 

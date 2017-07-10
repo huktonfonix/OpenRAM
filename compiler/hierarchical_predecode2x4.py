@@ -8,8 +8,8 @@ class hierarchical_predecode2x4(hierarchical_predecode):
     """
     Pre 2x4 decoder used in hierarchical_decoder.
     """
-    def __init__(self, nmos_width):
-        hierarchical_predecode.__init__(self, name="pre_{0}_2".format(nmos_width), nmos_width, 2)
+    def __init__(self):
+        hierarchical_predecode.__init__(self, 2)
 
         self.add_pins()
         self.create_modules()
@@ -43,12 +43,12 @@ class hierarchical_predecode2x4(hierarchical_predecode):
                 y_off = inv_2x4 * (self.inv.height)
                 offset = vector(self.x_off_inv_1, y_off)
                 mirror = "R0"
-                A_off = self.inv.A_position.scale(0, 1)
+                A_off = self.inv.get_pin("A").ll().scale(0, 1)
             else:
                 y_off = (inv_2x4 + 1) * (self.inv.height)
                 offset = vector(self.x_off_inv_1, y_off)
                 mirror="MX"
-                A_off = vector(0, - self.inv.A_position.y - drc["minwidth_metal1"])
+                A_off = vector(0, - self.inv.get_pin("A").ly() - drc["minwidth_metal1"])
             self.A_positions.append(offset + A_off)
             self.add_inst(name=name,
                           mod=self.inv,
@@ -91,8 +91,8 @@ class hierarchical_predecode2x4(hierarchical_predecode):
             y_off = (k + 1) * (self.nand.height) - drc["minwidth_metal1"]
             direct = - 1
         correct =[0,0]
-        yoffset_nand_in = [y_off + direct * self.nand.A_position.y, 
-                           y_off + direct * self.nand.B_position.y]
+        yoffset_nand_in = [y_off + direct * self.nand.get_pin("A").ly(), 
+                           y_off + direct * self.nand.get_pin("B").ly()]
         return yoffset_nand_in, correct
 
     def get_via_correct(self):

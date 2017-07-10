@@ -46,11 +46,9 @@ class precharge(design.design):
     def create_ptx(self):
         """Initializes the upper and lower pmos"""
         self.lower_pmos = ptx(width=self.ptx_width,
-                              mults=1, 
                               tx_type="pmos")
         self.add_mod(self.lower_pmos)
         self.upper_pmos = ptx(width=self.beta * self.ptx_width,
-                              mults=1,
                               tx_type="pmos")
         self.upper_pmos = self.upper_pmos
         self.add_mod(self.upper_pmos)
