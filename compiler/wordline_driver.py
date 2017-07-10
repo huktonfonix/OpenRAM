@@ -67,7 +67,7 @@ class wordline_driver(design.design):
                             width=drc["minwidth_metal2"],
                             height=self.height + 4*drc["minwidth_metal1"])
         
-        self.add_layout_pin(text="gnd[0]",
+        self.add_layout_pin(text="gnd",
                             layer="metal1",
                             offset=[0, -0.5*drc["minwidth_metal1"]],
                             width=self.x_offset0,
@@ -103,9 +103,9 @@ class wordline_driver(design.design):
             # Extend vdd and gnd of wordline_driver
             yoffset = (row + 1) * self.inv.height - 0.5 * drc["minwidth_metal1"]
             if (row % 2):
-                pin_name = "gnd[{0}]".format((row+1)/2)
+                pin_name = "gnd"
             else:
-                pin_name = "vdd[{0}]".format((row+1)/2)
+                pin_name = "vdd"
                 
             self.add_layout_pin(text=pin_name,
                                 layer="metal1",

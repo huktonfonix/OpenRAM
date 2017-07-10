@@ -114,6 +114,11 @@ class layout:
         
                          
     def get_pin(self, text):
+        """ Return the pin or list of pins """
+        # If we have one pin, return it and not the list
+        if len(self.pin_map[text])==1:
+            return self.pin_map[text][0]
+        # For multiple pins (e.g. vdd, gnd, return the list for iteration)
         return self.pin_map[text]
     
     def add_layout_pin(self, text, layer, offset, width=None, height=None):
@@ -129,7 +134,12 @@ class layout:
         self.add_label(text=text,
                        layer=layer,
                        offset=offset)
-        self.pin_map[text] = pin_layout(text,vector(offset,offset+vector(width,height)),layer)
+        
+        try:
+            self.pin_map[text].append(pin_layout(text,vector(offset,offset+vector(width,height)),layer))
+        except KeyError:
+            self.pin_map[text] = [pin_layout(text,vector(offset,offset+vector(width,height)),layer)]
+                                      
 
     def add_label(self, text, layer, offset=[0,0],zoom=-1):
         """Adds a text label on the given layer,offset, and zoom level"""
