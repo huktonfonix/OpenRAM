@@ -174,7 +174,7 @@ class wordline_driver(design.design):
             self.add_layout_pin(text="decode[{0}]".format(row),
                                 layer="metal1",
                                 offset=input_via_offset,
-                                width=mid_via_offset.x+drc["midwidth_metal1"],
+                                width=mid_via_offset.x+drc["minwidth_metal1"],
                                 height=cell_dir.y*drc["minwidth_metal1"])
             self.add_via(layers=("metal1", "via1", "metal2"),
                           offset=mid_via_offset,
