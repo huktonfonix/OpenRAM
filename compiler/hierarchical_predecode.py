@@ -219,7 +219,7 @@ class hierarchical_predecode(design.design):
         else:
             base_offset=[self.x_off_inv_1, 2 * self.inv.height - drc["minwidth_metal1"]]
             y_dir = -1
-        inv_out_offset = base_offset+self.inv.get_pin("Z").ll().scale(1,y_dir)
+        inv_out_offset = base_offset+self.inv.get_pin("Z").ur().scale(1,y_dir) - vector(0,drc["minwidth_metal1"]).scale(1,y_dir)
         inv_in_offset = base_offset+self.inv.get_pin("A").ll().scale(1,y_dir)
         inv_vdd_offset = base_offset+self.inv.get_pin("vdd").ll().scale(1,y_dir)
         inv_gnd_offset = base_offset+self.inv.get_pin("gnd").ll().scale(1,y_dir)
