@@ -20,7 +20,7 @@ class nor_2(design.design):
 
     unique_id = 1
     
-    def __init__(self, nmos_width=1, height=bitcell.height):
+    def __init__(self, nmos_width=drc["minwidth_tx"], height=bitcell.height):
         """Constructor : Creates a cell for a simple 2 input nor"""
         name = "nor2_{0}".format(nor_2.unique_id)
         nor_2.unique_id += 1

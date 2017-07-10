@@ -44,9 +44,9 @@ class control_logic(design.design):
         self.ms_flop = self.mod_ms_flop("ms_flop")
         self.add_mod(self.ms_flop)
 
-        self.nand2 = nand_2(nmos_width=2 * drc["minwidth_tx"])
+        self.nand2 = nand_2()
         self.add_mod(self.nand2)
-        self.NAND3 = nand_3(nmos_width=3 * drc["minwidth_tx"])
+        self.NAND3 = nand_3()
         self.add_mod(self.NAND3)
 
         # Special gates: 4x Inverter

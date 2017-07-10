@@ -6,20 +6,21 @@ from contact import contact
 from pinv import pinv
 from vector import vector
 from globals import OPTS
+from nand_2 import nand_2
+from nand_3 import nand_3
 
 
 class hierarchical_predecode(design.design):
     """
     Pre 2x4 and 3x8 decoder shared code.
     """
-    def __init__(self, nmos_width, cellname, input_number):
-        design.design.__init__(self, cellname)
+    def __init__(self, input_number):
+        design.design.__init__(self, name="pre3x8")
 
         c = reload(__import__(OPTS.config.bitcell))
         self.mod_bitcell = getattr(c, OPTS.config.bitcell)
-        self.bitcell_height = self.mod_bitcell.chars["height"]
+        self.bitcell_height = self.mod_bitcell.height
 
-        self.nmos_width = nmos_width
         self.number_of_inputs = input_number
         self.number_of_outputs = int(math.pow(2, self.number_of_inputs))
     
@@ -32,32 +33,43 @@ class hierarchical_predecode(design.design):
         self.add_pin("gnd")
 
     def create_modules(self):
-        layer_stack = ("metal1", "via1", "metal2")
-        self.m1m2_via = contact(layer_stack=layer_stack) 
-        self.inv = pinv(nmos_width=drc["minwidth_tx"],
-                        beta=2,
-                        height=self.bitcell_height)
+        """ Create the INV and NAND gate """
+        
+        self.inv = pinv()
         self.add_mod(self.inv)
-        # create_nand redefine in sub class based on number of inputs
-        self.create_nand()
+        
+        self.create_nand(self.number_of_inputs)
         self.add_mod(self.nand)
 
-    def set_up_constrain(self):
-        self.via_shift = (self.m1m2_via.second_layer_width - self.m1m2_via.first_layer_width) / 2
-        self.metal2_extend_contact = (self.m1m2_via.second_layer_height - self.m1m2_via.contact_width) / 2
-        self.via_shift = (self.m1m2_via.second_layer_width
-                              - self.m1m2_via.first_layer_width) / 2
-        self.metal2_extend_contact = (self.m1m2_via.second_layer_height 
-                                          - self.m1m2_via.contact_width) / 2
+    def create_nand(self,inputs):
+        """ Create the NAND for the predecode input stage """
+        if inputs==2:
+            self.nand = nand_2()
+        elif inputs==3:
+            self.nand = nand_3()
+        else:
+            debug.error("Invalid number of predecode inputs.",-1)
+            
+        
+    # DEAD CODE?
+    # def set_up_constrain(self):
+    #     self.via_shift = (self.m1m2_via.second_layer_width - self.m1m2_via.first_layer_width) / 2
+    #     self.metal2_extend_contact = (self.m1m2_via.second_layer_height - self.m1m2_via.contact_width) / 2
+    #     self.via_shift = (self.m1m2_via.second_layer_width
+    #                           - self.m1m2_via.first_layer_width) / 2
+    #     self.metal2_extend_contact = (self.m1m2_via.second_layer_height 
+    #                                       - self.m1m2_via.contact_width) / 2
 
-        self.gap_between_rails = (self.metal2_extend_contact 
-                                 + drc["metal2_to_metal2"])
-        self.gap_between_rail_offset = (self.gap_between_rails 
-                                       + drc["minwidth_metal2"])
+    #     self.gap_between_rails = (self.metal2_extend_contact 
+    #                              + drc["metal2_to_metal2"])
+    #     self.gap_between_rail_offset = (self.gap_between_rails 
+    #                                    + drc["minwidth_metal2"])
 
-    def setup_constrains(self):
-        self.via_shift = (self.m1m2_via.second_layer_width - self.m1m2_via.first_layer_width) / 2
-        self.metal2_extend_contact = (self.m1m2_via.second_layer_height - self.m1m2_via.contact_width) / 2
+    def setup_constraints(self):
+        layer_stack = ("metal1", "via1", "metal2")
+        m1m2_via = contact(layer_stack=layer_stack) 
+        self.via_shift = (m1m2_via.second_layer_width - m1m2_via.first_layer_width) / 2
+        self.metal2_extend_contact = (m1m2_via.second_layer_height - m1m2_via.contact_width) / 2
 
         # Contact shift used connecting NAND3 inputs to the rail
         self.contact_shift = (self.m1m2_via.first_layer_width - self.m1m2_via.contact_width) / 2

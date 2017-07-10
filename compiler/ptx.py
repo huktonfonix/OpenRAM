@@ -9,7 +9,7 @@ class ptx(design.design):
     This module generates gds and spice of a parametrically NMOS or PMOS sized transistor. 
     Creates a simple MOS transistor
     """
-    def __init__(self, width=1, mults=1, tx_type="nmos"):
+    def __init__(self, width=drc["minwidth_tx"], mults=1, tx_type="nmos"):
         name = "{0}_m{1}_w{2}".format(tx_type, mults, width)
         design.design.__init__(self, name)
         debug.info(3, "create ptx structure {0}".format(name))

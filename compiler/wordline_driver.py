@@ -40,11 +40,10 @@ class wordline_driver(design.design):
         self.create_layout()
 
     def add_layout(self):
-        self.inv = pinv(nmos_width=drc["minwidth_tx"],
-                        beta=parameter["pinv_beta"])
+        self.inv = pinv()
         self.add_mod(self.inv)
 
-        self.NAND2 = nand_2(nmos_width=2*drc["minwidth_tx"])
+        self.NAND2 = nand_2()
         self.add_mod(self.NAND2)
 
 

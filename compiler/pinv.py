@@ -18,7 +18,7 @@ class pinv(design.design):
 
     unique_id = 1
     
-    def __init__(self, nmos_width=1, beta=parameter["pinv_beta"], height=bitcell.height, route_output=True):
+    def __init__(self, nmos_width=drc["minwidth_tx"], beta=parameter["pinv_beta"], height=bitcell.height, route_output=True):
         """Constructor : Creates a cell for a simple inverter"""
         name = "pinv{0}".format(pinv.unique_id)
         pinv.unique_id += 1

@@ -1,7 +1,6 @@
 from tech import drc
 import debug
 import design
-from nand_2 import nand_2
 from vector import vector
 from hierarchical_predecode import hierarchical_predecode
 
@@ -9,18 +8,15 @@ class hierarchical_predecode2x4(hierarchical_predecode):
     """
     Pre 2x4 decoder used in hierarchical_decoder.
     """
-    def __init__(self, nmos_width, cellname):
-        hierarchical_predecode.__init__(self, nmos_width, cellname, 2)
+    def __init__(self, nmos_width):
+        hierarchical_predecode.__init__(self, name="pre_{0}_2".format(nmos_width), nmos_width, 2)
 
         self.add_pins()
         self.create_modules()
-        self.setup_constrains()
+        self.setup_constraints()
         self.create_layout()
         self.route()
 
-    def create_nand(self):
-        self.nand = nand_2(nmos_width=self.nmos_width,
-                           height=self.bitcell_height)
 
     def set_rail_height(self):
         self.rail_height = (self.number_of_outputs * self.nand.height 

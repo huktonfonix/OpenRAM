@@ -21,14 +21,17 @@ class nand_3(design.design):
 
     unique_id = 1
     
-    def __init__(self, nmos_width=1, height=bitcell.height):
+    def __init__(self, nmos_width=3*drc["minwidth_tx"], height=bitcell.height):
         """Constructor : Creates a cell for a simple 3 input nand"""
         name = "nand3_{0}".format(nand_3.unique_id)
         nand_3.unique_id += 1
         design.design.__init__(self, name)
         debug.info(2, "create nand_3 structure {0} with size of {1}".format(name, nmos_width))
 
-        self.nmos_width = nmos_width
+        self.nmos_size = nmos_width
+        # FIXME: Why is this??
+        self.pmos_size = 2 * nmos_width / 3
+        self.tx_mults = 1
         self.height =  height
 
         self.add_pins()
@@ -41,7 +44,6 @@ class nand_3(design.design):
 
     def create_layout(self):
         """ create layout """
-        self.determine_sizes()
         self.create_ptx()
         self.setup_layout_constants()
         self.add_rails()
@@ -58,12 +60,6 @@ class nand_3(design.design):
         self.extend_active()
         self.connect_rails()
         self.route_pins()
-
-    def determine_sizes(self):
-        """ Determine the size of the transistors used in this module """
-        self.nmos_size = self.nmos_width
-        self.pmos_size = 2 * self.nmos_width / 3
-        self.tx_mults = 1
 
     def create_ptx(self):
         """ Create ptx  but not yet placed"""

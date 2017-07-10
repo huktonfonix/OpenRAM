@@ -199,9 +199,7 @@ class bank(design.design):
                                                               word_size=self.word_size)
         self.add_mod(self.write_driver_array)
 
-        self.decoder = self.mod_decoder(nand2_nmos_width=2*drc["minwidth_tx"],
-                                        nand3_nmos_width=3*drc["minwidth_tx"], 
-                                        rows=self.num_rows)
+        self.decoder = self.mod_decoder(rows=self.num_rows)
         self.add_mod(self.decoder)
 
         self.msf_address = self.mod_ms_flop_array(name="msf_address", 
@@ -223,23 +221,17 @@ class bank(design.design):
         #self.wordline_driver.logic_effort_sizing(self.num_cols)
         self.add_mod(self.wordline_driver)
 
-        self.inv = pinv(nmos_width=drc["minwidth_tx"], 
-                        beta=parameter["pinv_beta"], 
-                        height=self.bitcell_height)
+        self.inv = pinv()
         self.add_mod(self.inv)
         
     # 4x Inverter
-        self.inv4x = pinv(nmos_width=4*drc["minwidth_tx"], 
-                          beta=parameter["pinv_beta"], 
-                          height=self.bitcell_height)
+        self.inv4x = pinv(nmos_width=4*drc["minwidth_tx"])
         self.add_mod(self.inv4x)
 
-        self.NAND2 = nand_2(nmos_width=2*drc["minwidth_tx"], 
-                            height=self.bitcell_height)
+        self.NAND2 = nand_2()
         self.add_mod(self.NAND2)
 
-        self.NOR2 = nor_2(nmos_width=drc["minwidth_tx"], 
-                          height=self.bitcell_height)
+        self.NOR2 = nor_2()
         self.add_mod(self.NOR2)
 
         # These aren't for instantiating, but we use them to get the dimensions

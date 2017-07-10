@@ -21,15 +21,17 @@ class nand_2(design.design):
 
     unique_id = 1
     
-    def __init__(self, nmos_width=1, height=bitcell.height):
+    def __init__(self, nmos_width=2*drc["minwidth_tx"], height=bitcell.height):
         """Constructor : Creates a cell for a simple 2 input nand"""
         name = "nand2_{0}".format(nand_2.unique_id)
         nand_2.unique_id += 1
         design.design.__init__(self, name)
-        debug.info(2, "create nand_2 structure {0} with size of {1}".format(
-            name, nmos_width))
+        debug.info(2, "create nand_2 structure {0} with size of {1}".format(name, nmos_width))
 
-        self.nmos_width = nmos_width
+        self.nmos_size = nmos_width
+        # FIXME why is this?
+        self.pmos_size = nmos_width
+        self.tx_mults = 1
         self.height = height
 
         self.add_pins()
@@ -42,7 +44,6 @@ class nand_2(design.design):
 
     def create_layout(self):
         """ Layout """
-        self.determine_sizes()
         self.create_ptx()
         self.setup_layout_constants()
         self.add_rails()
@@ -58,13 +59,6 @@ class nand_2(design.design):
         self.route_pins()
         self.extend_wells()
         self.extend_active()
-
-    # Determine transistor size
-    def determine_sizes(self):
-        """ Determine the size of the transistors """
-        self.nmos_size = self.nmos_width
-        self.pmos_size = self.nmos_width
-        self.tx_mults = 1
 
     # transistors are created here but not yet placed or added as a module
     def create_ptx(self):
@@ -292,7 +286,7 @@ class nand_2(design.design):
                               + self.pmos2.active_height 
                               + drc["metal1_to_metal1"] 
                               + self.pmos2.active_contact.second_layer_width))
-        if (self.nmos_width == drc["minwidth_tx"]):
+        if (self.nmos_size == drc["minwidth_tx"]):
             yoffset = (self.pmos_position1.y 
                         + self.pmos1.poly_positions[0].y
                         + drc["poly_extend_active"] 
@@ -331,7 +325,7 @@ class nand_2(design.design):
                        + drc["metal1_to_metal1"]
                        + self.nmos2.active_height
                        + drc["minwidth_metal1"])
-        if (self.nmos_width == drc["minwidth_tx"]):
+        if (self.nmos_size == drc["minwidth_tx"]):
             yoffset = (self.nmos_position1.y 
                         + self.nmos1.poly_positions[0].y 
                         + self.nmos1.poly_height 

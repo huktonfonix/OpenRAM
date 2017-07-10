@@ -104,12 +104,10 @@ class replica_bitline(design.design):
         self.m1m2_via = contact(layer_stack=("metal1", "via1", "metal2"))
         self.m2m3_via = contact(layer_stack=("metal2", "via2", "metal3"))
 
-        self.nor = nor_2(nmos_width=drc["minwidth_tx"])
+        self.nor = nor_2()
         self.add_mod(self.nor)
 
-        self.access_tx = ptx(width=drc["minwidth_tx"],
-                             mults=1,
-                             tx_type="pmos")
+        self.access_tx = ptx(tx_type="pmos")
         self.add_mod(self.access_tx)
 
     def add_modules(self):

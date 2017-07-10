@@ -1,7 +1,6 @@
 from tech import drc
 import debug
 import design
-from nand_3 import nand_3
 from vector import vector
 from hierarchical_predecode import hierarchical_predecode
 
@@ -10,18 +9,14 @@ class hierarchical_predecode3x8(hierarchical_predecode):
     """
     Pre 3x8 decoder used in hierarchical_decoder.
     """
-    def __init__(self, nmos_width, cellname):
-        hierarchical_predecode.__init__(self, nmos_width, cellname, 3)
+    def __init__(self, nmos_width, ):
+        hierarchical_predecode.__init__(self, nmos_width, 3)
 
         self.add_pins()
         self.create_modules()
-        self.setup_constrains()
+        self.setup_constraints()
         self.create_layout()
         self.route()
-
-    def create_nand(self):
-        self.nand = nand_3(nmos_width=self.nmos_width,
-                           height=self.bitcell_height)
 
     def set_rail_height(self):        
         self.rail_height = (self.number_of_outputs * self.nand.height 
