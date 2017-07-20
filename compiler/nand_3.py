@@ -419,8 +419,7 @@ class nand_3(design.design):
                      rotate=90)
         self.add_layout_pin(text="C",
                             layer="metal1",
-                            offset=[0,
-                                    yoffset - 2 * drc["minwidth_metal2"] - self.m1m2_via.width],
+                            offset=vector(0, yoffset - 2 * drc["minwidth_metal2"] - self.m1m2_via.width),
                             width=xoffset,
                             height=drc["minwidth_metal1"])
 
@@ -433,7 +432,7 @@ class nand_3(design.design):
                                      - (drc["minwidth_metal1"] / 2))
         self.add_layout_pin(text="Z",
                             layer="metal1",
-                            offset=[xoffset, yoffset],
+                            offset=vector(xoffset, yoffset),
                             width=self.well_width - xoffset,
                             height=drc["minwidth_metal1"])
 

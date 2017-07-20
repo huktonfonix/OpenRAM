@@ -25,7 +25,7 @@ class hierarchical_predecode3x8_test(unittest.TestCase):
         import tech
 
         debug.info(1, "Testing sample for hierarchy_decoder")
-        a = pre.hierarchical_predecode3x8(nmos_width=3 * tech.drc["minwidth_tx"])
+        a = pre.hierarchical_predecode3x8()
         OPTS.check_lvsdrc = True
         self.local_check(a)
 
