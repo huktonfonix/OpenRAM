@@ -209,10 +209,9 @@ class hierarchical_predecode(design.design):
             
             #add output
             inv_out_offset = inv_offset+self.inv.get_pin("Z").ll().scale(1,y_dir)
-            #- vector(0,drc["minwidth_metal1"]).scale(1,y_dir)
             self.add_rect(layer="metal1",
                           offset=inv_out_offset,
-                          width=self.rails[out_pin]-inv_out_offset.x,
+                          width=self.rails[out_pin]-inv_out_offset.x + drc["minwidth_metal2"],
                           height=drc["minwidth_metal1"])
             self.add_via(layers = ("metal1", "via1", "metal2"),
                          offset=[self.rails[out_pin], inv_out_offset.y])
@@ -221,7 +220,7 @@ class hierarchical_predecode(design.design):
             inv_in_offset = inv_offset+self.inv.get_pin("A").ll().scale(1,y_dir)
             self.add_rect(layer="metal1",
                           offset=[self.rails[in_pin], inv_in_offset.y],
-                          width=inv_in_offset.x - self.rails[in_pin] + drc["minwidth_metal2"],
+                          width=inv_in_offset.x - self.rails[in_pin],
                           height=drc["minwidth_metal1"])
             self.add_via(layers=("metal1", "via1", "metal2"),
                          offset=[self.rails[in_pin], inv_in_offset.y])
