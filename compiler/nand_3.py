@@ -315,18 +315,14 @@ class nand_3(design.design):
     def route_input_gate_A(self):
         """  routing for input A """
 
-        offset = (self.pmos_position1 + self.pmos.poly_positions[0] - vector(drc["minwidth_poly"] / 2,
-                                                                              self.poly_contact.width))
+        offset = vector(self.pmos.poly_positions[0].x + self.pmos_position1.x + drc["minwidth_poly"],
+                        self.pmos_position1.y + self.pmos.poly_positions[0].y - self.poly_contact.height)
         self.add_contact(layers=("poly", "contact", "metal1"),
                          offset=offset,
                          rotate=90)
-        self.add_rect(layer="poly",
-                      offset=offset + vector(drc["minwidth_poly"] / 2,0),
-                      width=-(self.poly_contact.first_layer_position.y + drc["minwidth_poly"]),
-                      height=self.poly_contact.first_layer_width)
 
         pin_offset = vector(0,
-                            self.pmos_position1.y + self.pmos.poly_positions[0].y - drc["minwidth_metal1"])
+                            self.pmos_position1.y + self.pmos.poly_positions[0].y - self.poly_contact.height)
         self.add_layout_pin(text="A",
                             layer="metal1",
                             offset=pin_offset,
@@ -338,7 +334,7 @@ class nand_3(design.design):
         """  routing for input B """
 
         xoffset = self.pmos.poly_positions[0].x + self.pmos_position2.x - drc["minwidth_poly"]
-        yoffset = self.pmos_position1.y + self.pmos.poly_positions[0].y - self.poly_contact.height - 1.5*drc["metal1_to_metal1"]
+        yoffset = self.pmos_position1.y + self.pmos.poly_positions[0].y - self.poly_contact.height - 2*drc["metal1_to_metal1"]
         
         self.add_contact(layers=("poly", "contact", "metal1"),
                          offset=[xoffset,yoffset])
@@ -354,7 +350,7 @@ class nand_3(design.design):
     def route_input_gate_C(self):
         """  routing for input C """
         xoffset = self.pmos.poly_positions[0].x + self.pmos_position3.x - drc["minwidth_poly"]
-        yoffset = self.pmos_position1.y + self.pmos.poly_positions[0].y - 2* self.poly_contact.height - 2.5*drc["metal1_to_metal1"]
+        yoffset = self.pmos_position1.y + self.pmos.poly_positions[0].y - 2* self.poly_contact.height - 3*drc["metal1_to_metal1"]
         
         self.add_contact(layers=("poly", "contact", "metal1"),
                          offset=[xoffset,yoffset])
