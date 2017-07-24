@@ -316,7 +316,7 @@ class nand_3(design.design):
         """  routing for input A """
         print self.poly_contact.height
 
-        offset = vector(self.pmos.poly_positions[0].x + self.pmos_position1.x - self.poly_contact.width,
+        offset = vector(self.pmos.poly_positions[0].x + self.pmos_position1.x - self.poly_contact.width + drc["minwidth_poly"],
                         self.pmos_position1.y + self.pmos.poly_positions[0].y - self.poly_contact.height)
         self.add_contact(layers=("poly", "contact", "metal1"),
                          offset=offset)
@@ -332,7 +332,7 @@ class nand_3(design.design):
     def route_input_gate_B(self):
         """  routing for input B """
 
-        offset = vector(self.pmos.poly_positions[0].x + self.pmos_position2.x - self.poly_contact.width,
+        offset = vector(self.pmos.poly_positions[0].x + self.pmos_position2.x - self.poly_contact.width + drc["minwidth_poly"],
                         self.pmos_position2.y + self.pmos.poly_positions[0].y  - self.poly_contact.height - 2*drc["metal1_to_metal1"])
         
         self.add_contact(layers=("poly", "contact", "metal1"),
@@ -348,7 +348,7 @@ class nand_3(design.design):
 
     def route_input_gate_C(self):
         """  routing for input C """
-        offset = vector(self.pmos.poly_positions[0].x + self.pmos_position3.x - self.poly_contact.width,
+        offset = vector(self.pmos.poly_positions[0].x + self.pmos_position3.x - self.poly_contact.width + drc["minwidth_poly"],
                         self.pmos_position2.y + self.pmos.poly_positions[0].y - 2*self.poly_contact.height - 3*drc["metal1_to_metal1"])
         
         self.add_contact(layers=("poly", "contact", "metal1"),
