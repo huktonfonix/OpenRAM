@@ -26,7 +26,7 @@ class hierarchical_predecode(design.design):
     
     def add_pins(self):
         for k in range(self.number_of_inputs):
-            self.add_pin("A[{0}]".format(k))
+            self.add_pin("in[{0}]".format(k))
         for i in range(self.number_of_outputs):
             self.add_pin("out[{0}]".format(i))
         self.add_pin("vdd")
@@ -50,33 +50,18 @@ class hierarchical_predecode(design.design):
         else:
             debug.error("Invalid number of predecode inputs.",-1)
             
-        
-    # DEAD CODE?
-    # def set_up_constrain(self):
-    #     self.via_shift = (self.m1m2_via.second_layer_width - self.m1m2_via.first_layer_width) / 2
-    #     self.metal2_extend_contact = (self.m1m2_via.second_layer_height - self.m1m2_via.contact_width) / 2
-    #     self.via_shift = (self.m1m2_via.second_layer_width
-    #                           - self.m1m2_via.first_layer_width) / 2
-    #     self.metal2_extend_contact = (self.m1m2_via.second_layer_height 
-    #                                       - self.m1m2_via.contact_width) / 2
-
-    #     self.gap_between_rails = (self.metal2_extend_contact 
-    #                              + drc["metal2_to_metal2"])
-    #     self.gap_between_rail_offset = (self.gap_between_rails 
-    #                                    + drc["minwidth_metal2"])
-
     def setup_constraints(self):
-        layer_stack = ("metal1", "via1", "metal2")
-        self.m1m2_via = contact(layer_stack=layer_stack) 
-        #self.via_shift = (self.m1m2_via.second_layer_width - self.m1m2_via.first_layer_width) / 2
-        #self.metal2_extend_contact = (self.m1m2_via.second_layer_height - self.m1m2_via.contact_width) / 2
-
-        # Contact shift used connecting NAND3 inputs to the rail
-        #self.contact_shift = (self.m1m2_via.first_layer_width - self.m1m2_via.contact_width) / 2
-
+        self.m1m2_via = contact(layer_stack=("metal1", "via1", "metal2")) 
         self.metal2_space = drc["metal2_to_metal2"]
-        self.metal2_pitch = self.m1m2_via.width + self.metal2_space
-
+        self.metal1_space = drc["metal1_to_metal1"]
+        self.metal2_width = drc["minwidth_metal2"]
+        self.metal1_width = drc["minwidth_metal1"]
+        # we are going to use horizontal vias, so use the via height
+        # use a conservative douple spacing just to get rid of annoying via DRCs
+        self.metal2_pitch = self.m1m2_via.height + 2*self.metal2_space
+        # This is to shift the rotated vias to be on m2 pitch
+        self.via_shift = self.m1m2_via.height - 0.5*drc["metal2_extend_via1"] 
+        
         # The rail offsets are indexed by the label
         self.rails = {}
 
@@ -89,7 +74,7 @@ class hierarchical_predecode(design.design):
         
         # Creating the right hand side metal2 rails for output connections
         for rail_index in range(2 * self.number_of_inputs + 2):
-            xoffset = self.x_off_inv_1 + self.inv.width + (rail_index * self.metal2_pitch)
+            xoffset = self.x_off_inv_1 + self.inv.width + ((rail_index+1) * self.metal2_pitch)
             if rail_index == 0:
                 self.rails["vdd"]=xoffset
             elif rail_index == 1:
@@ -99,8 +84,8 @@ class hierarchical_predecode(design.design):
             else:
                 self.rails["A[{}]".format(rail_index-self.number_of_inputs-2)]=xoffset
 
-        # x offset to NAND decoder includes the left rails, mid rails and inverters
-        self.x_off_nand = self.x_off_inv_1 + self.inv.width + (2 + 2*self.number_of_inputs) * self.metal2_pitch
+        # x offset to NAND decoder includes the left rails, mid rails and inverters, plus an extra m2 pitch
+        self.x_off_nand = self.x_off_inv_1 + self.inv.width + (3 + 2*self.number_of_inputs) * self.metal2_pitch
 
                        
         # x offset to output inverters
@@ -109,20 +94,23 @@ class hierarchical_predecode(design.design):
         # Height width are computed 
         self.width = self.x_off_inv_2 + self.inv.width
         self.height = self.number_of_outputs * self.nand.height
-        
-        # size = vector(self.width, self.height)
-        # correct =vector(0, 0.5 * drc["minwidth_metal1"])
-        # self.vdd_position = size - correct - vector(0, self.inv.height)
-        # self.gnd_position = size - correct 
 
     def create_rails(self):
         """ Create all of the rails for the inputs and vdd/gnd/inputs_bar/inputs """
         for label in self.rails.keys():
-            self.add_layout_pin(text=label,
-                                layer="metal2",
-                                offset=[self.rails[label], 0], 
-                                width=drc["minwidth_metal2"],
-                                height=self.height)
+            # these are not primary inputs, so they shouldn't have a
+            # label or LVS complains about different names on one net
+            if label.startswith("A"):
+                self.add_rect(layer="metal2",
+                              offset=[self.rails[label], 0], 
+                              width=self.metal2_width,
+                              height=self.height)
+            else:
+                self.add_layout_pin(text=label,
+                                    layer="metal2",
+                                    offset=[self.rails[label], 0], 
+                                    width=self.metal2_width,
+                                    height=self.height)
 
     def add_input_inverters(self):
         """ Create the input inverters to invert input signals for the decode stage. """
@@ -140,8 +128,8 @@ class hierarchical_predecode(design.design):
                           mod=self.inv,
                           offset=offset,
                           mirror=mirror)
-            self.connect_inst(["A[{0}]".format(inv_num),
-                               "Abar[{0}]".format(inv_num),
+            self.connect_inst(["in[{0}]".format(inv_num),
+                               "inbar[{0}]".format(inv_num),
                                "vdd", "gnd"])
             
     def add_output_inverters(self):
@@ -169,104 +157,113 @@ class hierarchical_predecode(design.design):
     def add_nand(self,connections):
         """ Create the NAND stage for the decodes """
         z_pin = self.nand.get_pin("Z")
+        a_pin = self.inv.get_pin("A")
         for nand_input in range(self.number_of_outputs):
             inout = str(self.number_of_inputs)+"x"+str(self.number_of_outputs)
             name = "Xpre{0}_nand[{1}]".format(inout,nand_input)
+            rect_height = z_pin.uy()-a_pin.ly()
             if (nand_input % 2 == 0):
                 y_off = nand_input * (self.nand.height)
                 mirror = "R0"
-                offset = vector(self.x_off_nand + self.nand.width,
-                                y_off + z_pin.ly())
+                rect_offset = vector(self.x_off_nand + self.nand.width,
+                                     y_off + z_pin.uy() - rect_height)
             else:
                 y_off = (nand_input + 1) * (self.nand.height)
                 mirror = "MX"
-                offset =vector(self.x_off_nand + self.nand.width,
-                               y_off - z_pin.ly() - drc["minwidth_metal1"])
+                rect_offset =vector(self.x_off_nand + self.nand.width,
+                                    y_off - z_pin.uy())
             self.add_inst(name=name,
                           mod=self.nand,
                           offset=[self.x_off_nand, y_off],
                           mirror=mirror)
             self.add_rect(layer="metal1",
-                          offset=offset,
-                          width=drc["minwidth_metal1"],
-                          height=drc["minwidth_metal1"])
+                          offset=rect_offset,
+                          width=self.metal1_width,
+                          height=rect_height)
             self.connect_inst(connections[nand_input])
 
     def route(self):
         self.route_input_inverters()
+        self.route_inputs_to_rails()
         self.route_nand_to_rails()
-        #self.route_vdd_gnd_from_rails_to_gates()
+        self.route_vdd_gnd_from_rails()
 
+    def route_inputs_to_rails(self):
+        """ Route the uninverted inputs to the second set of rails """
+        for num in range(self.number_of_inputs):
+            # route one signal next to each vdd/gnd rail since this is
+            # typically where the p/n devices are and there are no
+            # pins in the nand gates. The vdd rail and signal tracks
+            # don't quite line up so add a partial metal1 spacing
+            y_offset = (num+self.number_of_inputs) * self.inv.height + 1.75*self.metal1_space
+            in_pin = "in[{}]".format(num)            
+            a_pin = "A[{}]".format(num)            
+            self.add_rect(layer="metal1",
+                          offset=[self.rails[in_pin],y_offset],
+                          width=self.rails[a_pin] + self.metal2_width - self.rails[in_pin],
+                          height=self.metal1_width)
+            self.add_via(layers = ("metal1", "via1", "metal2"),
+                         offset=[self.rails[in_pin] + self.via_shift, y_offset],
+                         rotate=90)
+            self.add_via(layers = ("metal1", "via1", "metal2"),
+                         offset=[self.rails[a_pin] + self.via_shift, y_offset],
+                         rotate=90)
+            
     def route_input_inverters(self):
         """
         Route all conections of the inputs inverters [Inputs, outputs, vdd, gnd] 
         """
         for inv_num in range(self.number_of_inputs):
-            (inv_offset, y_dir) = self.get_inverter_offset(self.x_off_inv_1, inv_num)
+            (inv_offset, y_dir) = self.get_gate_offset(self.x_off_inv_1, self.inv.height, inv_num)
             
             out_pin = "Abar[{}]".format(inv_num)
             in_pin = "in[{}]".format(inv_num)
             
-            #add output
-            inv_out_offset = inv_offset+self.inv.get_pin("Z").ll().scale(1,y_dir)
+            #add output so that it is just below the vdd or gnd rail
+            # since this is where the p/n devices are and there are no
+            # pins in the nand gates.
+            y_offset = (inv_num+1) * self.inv.height - 3*self.metal1_space
+            inv_out_offset = inv_offset+self.inv.get_pin("Z").ur().scale(1,y_dir)-vector(0,self.metal1_width).scale(1,y_dir)
+            self.add_rect(layer="metal1",
+                          offset=[inv_out_offset.x,y_offset],
+                          width=self.rails[out_pin]-inv_out_offset.x + self.metal2_width,
+                          height=self.metal1_width)
             self.add_rect(layer="metal1",
                           offset=inv_out_offset,
-                          width=self.rails[out_pin]-inv_out_offset.x + drc["minwidth_metal2"],
-                          height=drc["minwidth_metal1"])
+                          width=self.metal1_width,
+                          height=y_offset-inv_out_offset.y)
             self.add_via(layers = ("metal1", "via1", "metal2"),
-                         offset=[self.rails[out_pin], inv_out_offset.y])
+                         offset=[self.rails[out_pin] + self.via_shift, y_offset],
+                         rotate=90)
+
             
             #route input
             inv_in_offset = inv_offset+self.inv.get_pin("A").ll().scale(1,y_dir)
             self.add_rect(layer="metal1",
                           offset=[self.rails[in_pin], inv_in_offset.y],
                           width=inv_in_offset.x - self.rails[in_pin],
-                          height=drc["minwidth_metal1"])
+                          height=self.metal1_width)
             self.add_via(layers=("metal1", "via1", "metal2"),
-                         offset=[self.rails[in_pin], inv_in_offset.y])
+                         offset=[self.rails[in_pin] +  self.via_shift, inv_in_offset.y],
+                         rotate=90)
+            
 
-            # route vdd
-            inv_vdd_offset = inv_offset+self.inv.get_pin("vdd").ll().scale(1,y_dir)
-            self.add_rect(layer="metal1",
-                          offset=inv_vdd_offset,
-                          width=self.rails["vdd"] - inv_vdd_offset.x + drc["minwidth_metal2"],
-                          height=drc["minwidth_metal1"])
-            self.add_via(layers = ("metal1", "via1", "metal2"),
-                         offset=[self.rails["vdd"], inv_vdd_offset.y])
-            # route gnd
-            inv_gnd_offset = inv_offset+self.inv.get_pin("gnd").ll().scale(1,y_dir)
-            self.add_rect(layer="metal1",
-                          offset=inv_gnd_offset,
-                          width=self.rails["gnd"] - inv_gnd_offset.x + drc["minwidth_metal2"],
-                          height=drc["minwidth_metal1"])
-            self.add_via(layers = ("metal1", "via1", "metal2"),
-                         offset=[self.rails["gnd"], inv_gnd_offset.y])
 
-    def get_inverter_offset(self, x_offset, inv_num):
-        """ Gets the base offset and y orientation of stacked rows of inverters.
-        Input is which inverter in the stack from 0.."""
+    def get_gate_offset(self, x_offset, height, inv_num):
+        """ Gets the base offset and y orientation of stacked rows of gates.
+        Input is which gate in the stack from 0..n
+        """
 
         if (inv_num % 2 == 0):
-            base_offset=vector(x_offset, inv_num * self.inv.height)
+            base_offset=vector(x_offset, inv_num * height)
             y_dir = 1
         else:
-            base_offset=vector(x_offset, (inv_num+1) * self.inv.height - inv_num*drc["minwidth_metal1"])
+            # we lose a rail after every 2 gates            
+            base_offset=vector(x_offset, (inv_num+1) * height - (inv_num%2)*self.metal1_width)
             y_dir = -1
             
         return (base_offset,y_dir)
 
-    def get_nand_offset(self, x_offset, nand_num):
-        """ Gets the base offset and y orientation of stacked rows of inverters.
-        Input is which inverter in the stack from 0.."""
-
-        if (nand_num % 2 == 0):
-            base_offset=vector(x_offset, nand_num * self.nand.height)
-            y_dir = 1
-        else:
-            base_offset=vector(x_offset, (nand_num+1) * self.nand.height - nand_num*drc["minwidth_metal1"])
-            y_dir = -1
-            
-        return (base_offset,y_dir)
     
 
     def route_nand_to_rails(self):
@@ -275,7 +272,7 @@ class hierarchical_predecode(design.design):
         for k in range(self.number_of_outputs):
             # create x offset list         
             index_lst= nand_input_line_combination[k]
-            (nand_offset,y_dir) = self.get_nand_offset(self.x_off_nand,k)
+            (nand_offset,y_dir) = self.get_gate_offset(self.x_off_nand,self.nand.height,k)
 
             if self.number_of_inputs == 2:
                 gate_lst = ["A","B"]
@@ -288,33 +285,41 @@ class hierarchical_predecode(design.design):
                 self.add_rect(layer="metal1",
                               offset=[self.rails[rail_pin], pin_offset.y],
                               width=pin_offset.x - self.rails[rail_pin],
-                              height=drc["minwidth_metal1"])
+                              height=self.metal1_width)
                 self.add_via(layers=("metal1", "via1", "metal2"),
-                             offset=[self.rails[rail_pin], pin_offset.y])
+                             offset=[self.rails[rail_pin] +  self.via_shift, pin_offset.y],
+                             rotate=90)
 
 
 
-    def route_vdd_gnd_from_rails_to_gates(self):
-        #via_correct = self.get_via_correct()
-        via_correct = vector(0,0)
-        for k in range(self.number_of_outputs):
-            power_line_index = self.number_of_inputs + 1 - (k%2)
-            yoffset = k * self.inv.height -  0.5 * drc["minwidth_metal1"]
+    def route_vdd_gnd_from_rails(self):
+
+
+        for num in range(0,self.number_of_outputs):
+            # this will result in duplicate polygons for rails, but who cares
+            
+            # use the inverter offset even though it will be the nand's too
+            (gate_offset, y_dir) = self.get_gate_offset(0, self.inv.height, num)
+
+            # route vdd
+            vdd_offset = gate_offset+self.inv.get_pin("vdd").ll().scale(1,y_dir)
             self.add_rect(layer="metal1",
-                          offset=[self.rails_x_offset[power_line_index],
-                                  yoffset],
-                          width=self.x_off_nand - self.rails_x_offset[power_line_index],
-                          height=drc["minwidth_metal1"])
+                          offset=vdd_offset,
+                          width=self.x_off_inv_2 + self.inv.width + self.metal2_width,
+                          height=self.metal1_width)
             self.add_via(layers = ("metal1", "via1", "metal2"),
-                         offset=[self.rails_x_offset[power_line_index] + self.gap_between_rails,
-                                 yoffset - via_correct.y])
+                         offset=[self.rails["vdd"] +  self.via_shift, vdd_offset.y],
+                         rotate=90)
 
-        yoffset = (self.number_of_outputs * self.inv.height 
-                       - 0.5 * drc["minwidth_metal1"])
-        index = self.number_of_inputs + 1
-        self.add_rect(layer="metal1",
-                      offset=[self.rails_x_offset[index], yoffset],
-                      width=self.x_off_nand - self.rails_x_offset[index],
-                      height=drc["minwidth_metal1"])
-        self.add_via(layers = ("metal1", "via1", "metal2"),
-                     offset=[self.rails_x_offset[index], yoffset] - via_correct)
+            # route gnd
+            gnd_offset = gate_offset+self.inv.get_pin("gnd").ll().scale(1,y_dir)
+            self.add_rect(layer="metal1",
+                          offset=gnd_offset,
+                          width=self.x_off_inv_2 + self.inv.width + self.metal2_width,
+                          height=self.metal1_width)
+            self.add_via(layers = ("metal1", "via1", "metal2"),
+                         offset=[self.rails["gnd"] +  self.via_shift, gnd_offset.y],
+                         rotate=90)
+        
+
+

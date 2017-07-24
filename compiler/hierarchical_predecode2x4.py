@@ -27,10 +27,10 @@ class hierarchical_predecode2x4(hierarchical_predecode):
         self.create_rails()
         self.add_input_inverters()
         self.add_output_inverters()
-        connections =[["A[0]",    "A[1]",    "Z[3]", "vdd", "gnd"],
-                      ["Abar[0]", "A[1]",    "Z[2]", "vdd", "gnd"],
-                      ["A[0]",    "Abar[1]", "Z[1]", "vdd", "gnd"],
-                      ["Abar[0]", "Abar[1]", "Z[0]", "vdd", "gnd"]]
+        connections =[["in[0]",    "in[1]",    "Z[3]", "vdd", "gnd"],
+                      ["inbar[0]", "in[1]",    "Z[2]", "vdd", "gnd"],
+                      ["in[0]",    "inbar[1]", "Z[1]", "vdd", "gnd"],
+                      ["inbar[0]", "inbar[1]", "Z[0]", "vdd", "gnd"]]
         self.add_nand(connections)
 
     def get_nand_input_line_combination(self):
@@ -43,10 +43,10 @@ class hierarchical_predecode2x4(hierarchical_predecode):
 
 
     def delay(self, slew, load = 0.0 ):
-        # A -> Abar
+        # in -> inbar
         a_t_b_delay = self.inv.delay(slew=slew,load = self.nand.input_load())
 
-        # Abar -> z
+        # inbar -> z
         b_t_z_delay = self.nand.delay(slew=a_t_b_delay.slew,load = self.inv.input_load())
         result = a_t_b_delay + b_t_z_delay
 
