@@ -60,9 +60,9 @@ class hierarchical_predecode(design.design):
         # use a conservative douple spacing just to get rid of annoying via DRCs
         self.metal2_pitch = self.m1m2_via.height + 2*self.metal2_space
         # This is to shift the rotated vias to be on m2 pitch
-        self.via_x_shift = self.m1m2_via.height - 0.5*drc["metal2_extend_via1"] 
+        self.via_x_shift = self.m1m2_via.height + self.m1m2_via.via_layer_position.scale(0,-1).y
         # This is to shift the via if the metal1 and metal2 overlaps are different
-        self.via_y_shift = self.m1m2_via.second_layer_position.x - self.m1m2_via.first_layer_position.x
+        self.via_y_shift = self.m1m2_via.second_layer_position.x - self.m1m2_via.first_layer_position.x + self.m1m2_via.via_layer_position.scale(-0.5,0).x
         
         # The rail offsets are indexed by the label
         self.rails = {}
@@ -196,7 +196,7 @@ class hierarchical_predecode(design.design):
             # route one signal next to each vdd/gnd rail since this is
             # typically where the p/n devices are and there are no
             # pins in the nand gates. 
-            y_offset = (num+self.number_of_inputs) * self.inv.height + self.metal1_space
+            y_offset = (num+self.number_of_inputs) * self.inv.height + 2*self.metal1_space
             in_pin = "in[{}]".format(num)            
             a_pin = "A[{}]".format(num)            
             self.add_rect(layer="metal1",
