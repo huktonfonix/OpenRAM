@@ -314,11 +314,11 @@ class nand_3(design.design):
 
     def route_input_gate_A(self):
         """  routing for input A """
-        offset = vector(self.pmos.poly_positions[0].x + self.pmos_position1.x + drc["minwidth_poly"],
+        offset = vector(self.pmos.poly_positions[0].x + self.pmos_position1.x,
                         self.pmos_position1.y + self.pmos.poly_positions[0].y - self.poly_contact.width)
         self.add_contact(layers=("poly", "contact", "metal1"),
-                         offset=offset + self.poly_contact.via_layer_position.rotate().scale(1,-1),
-                         rotate=90)
+                         offset=offset + self.poly_contact.via_layer_position.rotate().scale(0,-1) - vector(drc["minwidth_poly"],0))
+
         
         loc = offset.scale(0,1) 
         self.add_layout_pin(text="A",
@@ -331,12 +331,12 @@ class nand_3(design.design):
     def route_input_gate_B(self):
         """  routing for input B """
 
-        offset = vector(self.pmos.poly_positions[0].x + self.pmos_position2.x + drc["minwidth_poly"],
+        offset = vector(self.pmos.poly_positions[0].x + self.pmos_position2.x,
                         self.pmos_position2.y + self.pmos.poly_positions[0].y  - self.poly_contact.width - 1*(self.m1m2_via.width+drc["metal1_to_metal1"]))
         
         self.add_contact(layers=("poly", "contact", "metal1"),
-                         offset=offset + self.poly_contact.via_layer_position.rotate().scale(1,-1),
-                         rotate=90)
+                         offset=offset + self.poly_contact.via_layer_position.rotate().scale(0,-1) - vector(drc["minwidth_poly"],0))
+
 
         loc = offset.scale(0,1)
         self.add_layout_pin(text="B",
@@ -348,12 +348,12 @@ class nand_3(design.design):
 
     def route_input_gate_C(self):
         """  routing for input C """
-        offset = vector(self.pmos.poly_positions[0].x + self.pmos_position3.x  + drc["minwidth_poly"],
+        offset = vector(self.pmos.poly_positions[0].x + self.pmos_position3.x,
                         self.pmos_position3.y + self.pmos.poly_positions[0].y - self.poly_contact.width - 2*(self.m1m2_via.width+drc["metal1_to_metal1"]))
         
         self.add_contact(layers=("poly", "contact", "metal1"),
-                         offset=offset + self.poly_contact.via_layer_position.rotate().scale(1,-1),
-                         rotate=90)
+                         offset=offset + self.poly_contact.via_layer_position.rotate().scale(0,-1) - vector(drc["minwidth_poly"],0))
+
 
         loc = offset.scale(0,1) 
         self.add_layout_pin(text="C",
