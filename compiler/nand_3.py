@@ -314,8 +314,9 @@ class nand_3(design.design):
 
     def route_input_gate_A(self):
         """  routing for input A """
-        offset = vector(self.pmos.poly_positions[0].x + self.pmos_position1.x,
-                        self.pmos_position1.y + self.pmos.poly_positions[0].y - self.poly_contact.width)
+        print self.pmos_position1,self.pmos.poly_positions
+        offset = self.pmos_position1 + self.pmos.poly_positions[0] - vector(0,self.poly_contact.height)
+        print "a ",offset
         self.add_contact(layers=("poly", "contact", "metal1"),
                          offset=offset + self.poly_contact.via_layer_position.rotate().scale(0,-1) - vector(drc["minwidth_poly"],0))
 
@@ -331,9 +332,8 @@ class nand_3(design.design):
     def route_input_gate_B(self):
         """  routing for input B """
 
-        offset = vector(self.pmos.poly_positions[0].x + self.pmos_position2.x,
-                        self.pmos_position2.y + self.pmos.poly_positions[0].y  - self.poly_contact.width - 1*(self.m1m2_via.width+drc["metal1_to_metal1"]))
-        
+        offset = self.pmos_position2 + self.pmos.poly_positions[0] - vector(0,self.poly_contact.height+1*(self.m1m2_via.width+drc["metal1_to_metal1"]))
+        print "b ",offset
         self.add_contact(layers=("poly", "contact", "metal1"),
                          offset=offset + self.poly_contact.via_layer_position.rotate().scale(0,-1) - vector(drc["minwidth_poly"],0))
 
@@ -348,9 +348,8 @@ class nand_3(design.design):
 
     def route_input_gate_C(self):
         """  routing for input C """
-        offset = vector(self.pmos.poly_positions[0].x + self.pmos_position3.x,
-                        self.pmos_position3.y + self.pmos.poly_positions[0].y - self.poly_contact.width - 2*(self.m1m2_via.width+drc["metal1_to_metal1"]))
-        
+        offset = self.pmos_position3 + self.pmos.poly_positions[0] - vector(0,self.poly_contact.height+2*(self.m1m2_via.width+drc["metal1_to_metal1"]))
+        print "c ",offset        
         self.add_contact(layers=("poly", "contact", "metal1"),
                          offset=offset + self.poly_contact.via_layer_position.rotate().scale(0,-1) - vector(drc["minwidth_poly"],0))
 
