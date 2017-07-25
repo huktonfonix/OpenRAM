@@ -140,21 +140,31 @@ class hierarchical_predecode(design.design):
         self.decode_out_positions = []
         z_pin = self.inv.get_pin("Z")
         for inv_num in range(self.number_of_outputs):
-            name = "Xpre2x4_nand_inv[{0}]".format(inv_num)
+            name = "Xpre2x4_nand_inv[{}]".format(inv_num)
             if (inv_num % 2 == 0):
                 y_factor = inv_num
                 mirror = "R0"
+                y_dir = 1
             else:
                 y_factor =inv_num + 1
-                mirror = "MX"   
+                mirror = "MX"
+                y_dir = -1
             base = vector(self.x_off_inv_2, self.inv.height * y_factor)   
             self.add_inst(name=name,
                           mod=self.inv,
                           offset=base,
                           mirror=mirror)
-            self.connect_inst(["Z[{0}]".format(inv_num),
-                               "out[{0}]".format(inv_num),
+            self.connect_inst(["Z[{}]".format(inv_num),
+                               "out[{}]".format(inv_num),
                                "vdd", "gnd"])
+            
+            z_pin = self.inv.get_pin("Z")
+            self.add_layout_pin(text="out[{}]".format(inv_num),
+                                layer="metal1",
+                                offset=base+z_pin.ll().scale(1,y_dir),
+                                width=z_pin.width(),
+                                height=z_pin.height()*y_dir)
+            
 
     def add_nand(self,connections):
         """ Create the NAND stage for the decodes """

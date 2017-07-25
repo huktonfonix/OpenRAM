@@ -314,17 +314,16 @@ class nand_3(design.design):
 
     def route_input_gate_A(self):
         """  routing for input A """
-        print self.pmos_position1,self.pmos.poly_positions
-        offset = self.pmos_position1 + self.pmos.poly_positions[0] - vector(0,self.poly_contact.height)
-        print "a ",offset
-        self.add_contact(layers=("poly", "contact", "metal1"),
-                         offset=offset + self.poly_contact.first_layer_position.scale(-1,0) - vector(self.poly_contact.first_layer_width,0) + vector(drc["minwidth_poly"],0))
 
-        
-        loc = offset.scale(0,1) 
+        offset = self.pmos_position1 + self.pmos.poly_positions[0] - vector(0,self.poly_contact.height)
+        via_offset = offset + self.poly_contact.first_layer_position.scale(-1,0) - vector(self.poly_contact.first_layer_width,0) + vector(drc["minwidth_poly"],0)
+
+        self.add_contact(layers=("poly", "contact", "metal1"),
+                         offset=via_offset)
+
         self.add_layout_pin(text="A",
                             layer="metal1",
-                            offset=loc,
+                            offset=offset.scale(0,1),
                             width=offset.x,
                             height=drc["minwidth_metal1"])
 
@@ -333,15 +332,14 @@ class nand_3(design.design):
         """  routing for input B """
 
         offset = self.pmos_position2 + self.pmos.poly_positions[0] - vector(0,self.poly_contact.height+1*(self.m1m2_via.width+drc["metal1_to_metal1"]))
-        print "b ",offset
+        via_offset = offset + self.poly_contact.first_layer_position.scale(-1,0) - vector(self.poly_contact.first_layer_width,0) + vector(drc["minwidth_poly"],0)
+
         self.add_contact(layers=("poly", "contact", "metal1"),
-                         offset=offset + self.poly_contact.first_layer_position.scale(-1,0) - vector(self.poly_contact.first_layer_width,0) + vector(drc["minwidth_poly"],0))
+                         offset=via_offset)
 
-
-        loc = offset.scale(0,1)
         self.add_layout_pin(text="B",
                             layer="metal1",
-                            offset=loc,
+                            offset=offset.scale(0,1),
                             width=offset.x,
                             height=drc["minwidth_metal1"])
     
@@ -349,15 +347,15 @@ class nand_3(design.design):
     def route_input_gate_C(self):
         """  routing for input C """
         offset = self.pmos_position3 + self.pmos.poly_positions[0] - vector(0,self.poly_contact.height+2*(self.m1m2_via.width+drc["metal1_to_metal1"]))
-        print "c ",offset        
+        via_offset = offset + self.poly_contact.first_layer_position.scale(-1,0) - vector(self.poly_contact.first_layer_width,0) + vector(drc["minwidth_poly"],0)
+
         self.add_contact(layers=("poly", "contact", "metal1"),
-                         offset=offset + self.poly_contact.first_layer_position.scale(-1,0) - vector(self.poly_contact.first_layer_width,0) + vector(drc["minwidth_poly"],0))
+                         offset=via_offset)
 
 
-        loc = offset.scale(0,1) 
         self.add_layout_pin(text="C",
                             layer="metal1",
-                            offset=loc,
+                            offset=offset.scale(0,1),
                             width=offset.x,
                             height=drc["minwidth_metal1"])
 
