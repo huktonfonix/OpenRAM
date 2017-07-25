@@ -318,7 +318,7 @@ class nand_3(design.design):
         offset = self.pmos_position1 + self.pmos.poly_positions[0] - vector(0,self.poly_contact.height)
         print "a ",offset
         self.add_contact(layers=("poly", "contact", "metal1"),
-                         offset=offset + self.poly_contact.via_layer_position.rotate().scale(-2,0) + vector(0.25*drc["minwidth_poly"],0))
+                         offset=offset + self.poly_contact.first_layer_position.scale(-1,0) - vector(self.poly_contact.first_layer_width,0) + vector(drc["minwidth_poly"],0))
 
         
         loc = offset.scale(0,1) 
@@ -335,7 +335,7 @@ class nand_3(design.design):
         offset = self.pmos_position2 + self.pmos.poly_positions[0] - vector(0,self.poly_contact.height+1*(self.m1m2_via.width+drc["metal1_to_metal1"]))
         print "b ",offset
         self.add_contact(layers=("poly", "contact", "metal1"),
-                         offset=offset + self.poly_contact.via_layer_position.rotate().scale(-2,0) + vector(0.25*drc["minwidth_poly"],0))
+                         offset=offset + self.poly_contact.first_layer_position.scale(-1,0) - vector(self.poly_contact.first_layer_width,0) + vector(drc["minwidth_poly"],0))
 
 
         loc = offset.scale(0,1)
@@ -351,7 +351,7 @@ class nand_3(design.design):
         offset = self.pmos_position3 + self.pmos.poly_positions[0] - vector(0,self.poly_contact.height+2*(self.m1m2_via.width+drc["metal1_to_metal1"]))
         print "c ",offset        
         self.add_contact(layers=("poly", "contact", "metal1"),
-                         offset=offset + self.poly_contact.via_layer_position.rotate().scale(-2,0)  + vector(0.25*drc["minwidth_poly"],0))
+                         offset=offset + self.poly_contact.first_layer_position.scale(-1,0) - vector(self.poly_contact.first_layer_width,0) + vector(drc["minwidth_poly"],0))
 
 
         loc = offset.scale(0,1) 
