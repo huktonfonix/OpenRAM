@@ -252,7 +252,6 @@ class hierarchical_decoder(design.design):
     def add_pre3x8_pins(self,num,offset):
         """ Add the input pins to the 3x8 predecoder at the given offset """
 
-        # ADDING LABELS FOR INPUT SIDE OF THE 2:4 PRE-DECODER
         for i in range(3):            
             pin = self.pre3_8.get_pin("in[{}]".format(i))
 
@@ -260,7 +259,7 @@ class hierarchical_decoder(design.design):
                 pin_offset = offset + pin.ll().scale(1,0)
             else:
                 pin_offset = offset + pin.ll().scale(-1,0) - vector(drc["minwidth_metal2"],0)
-            self.add_layout_pin(text="A[{0}]".format(i + num * 3),
+            self.add_layout_pin(text="A[{0}]".format(i + 3*num + 2*self.no_of_pre2x4),
                                 layer="metal2", 
                                 offset=pin_offset,
                                 width=pin.width(),
