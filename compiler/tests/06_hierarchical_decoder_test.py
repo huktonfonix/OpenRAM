@@ -22,43 +22,33 @@ class hierarchical_decoder_test(unittest.TestCase):
         import hierarchical_decoder
         import tech
 
-        debug.info(1, "Testing 4 row sample for hierarchical_decoder")
-        OPTS.check_lvsdrc = False
-        a = hierarchical_decoder.hierarchical_decoder(nand2_nmos_width=2 * tech.drc["minwidth_tx"],
-                                                      nand3_nmos_width=3 * tech.drc["minwidth_tx"],
-                                                      rows=4)
-        OPTS.check_lvsdrc = True
-        self.local_check(a)
+        # debug.info(1, "Testing 4 row sample for hierarchical_decoder")
+        # OPTS.check_lvsdrc = False
+        # a = hierarchical_decoder.hierarchical_decoder(rows=4)
+        # OPTS.check_lvsdrc = True
+        # self.local_check(a)
 
-        debug.info(1, "Testing 8 row sample for hierarchical_decoder")
-        OPTS.check_lvsdrc = False
-        a = hierarchical_decoder.hierarchical_decoder(nand2_nmos_width=2 * tech.drc["minwidth_tx"],
-                                                      nand3_nmos_width=3 * tech.drc["minwidth_tx"],
-                                                      rows=8)
-        OPTS.check_lvsdrc = True
-        self.local_check(a)
+        # debug.info(1, "Testing 8 row sample for hierarchical_decoder")
+        # OPTS.check_lvsdrc = False
+        # a = hierarchical_decoder.hierarchical_decoder(rows=8)
+        # OPTS.check_lvsdrc = True
+        # self.local_check(a)
 
         debug.info(1, "Testing 32 row sample for hierarchical_decoder")
         OPTS.check_lvsdrc = False
-        a = hierarchical_decoder.hierarchical_decoder(nand2_nmos_width=2 * tech.drc["minwidth_tx"],
-                                                      nand3_nmos_width=3 * tech.drc["minwidth_tx"],
-                                                      rows=32)
+        a = hierarchical_decoder.hierarchical_decoder(rows=32)
         OPTS.check_lvsdrc = True
         self.local_check(a)
 
         debug.info(1, "Testing 128 row sample for hierarchical_decoder")
         OPTS.check_lvsdrc = False
-        a = hierarchical_decoder.hierarchical_decoder(nand2_nmos_width=2 * tech.drc["minwidth_tx"],
-                                                      nand3_nmos_width=3 * tech.drc["minwidth_tx"],
-                                                      rows=128)
+        a = hierarchical_decoder.hierarchical_decoder(rows=128)
         OPTS.check_lvsdrc = True
         self.local_check(a)
 
         debug.info(1, "Testing 512 row sample for hierarchical_decoder")
         OPTS.check_lvsdrc = False
-        a = hierarchical_decoder.hierarchical_decoder(nand2_nmos_width=2 * tech.drc["minwidth_tx"],
-                                                      nand3_nmos_width=3 * tech.drc["minwidth_tx"],
-                                                      rows=512)
+        a = hierarchical_decoder.hierarchical_decoder(rows=512)
         OPTS.check_lvsdrc = True
         self.local_check(a)
 

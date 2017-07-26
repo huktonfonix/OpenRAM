@@ -8,7 +8,11 @@ class pin_layout:
 
     def __init__(self, name, rect, layer):
         self.name = name
-        self.rect = rect
+        # repack the rect as a vector, just in case
+        if type(rect[0])==vector:
+            self.rect = rect
+        else:
+            self.rect = [vector(rect[0]),vector(rect[1])]
         self.layer = layer
 
     def __str__(self):

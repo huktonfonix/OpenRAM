@@ -4,7 +4,6 @@ import design
 from vector import vector
 from hierarchical_predecode import hierarchical_predecode
 
-
 class hierarchical_predecode3x8(hierarchical_predecode):
     """
     Pre 3x8 decoder used in hierarchical_decoder.
@@ -16,7 +15,7 @@ class hierarchical_predecode3x8(hierarchical_predecode):
         self.create_modules()
         self.setup_constraints()
         self.create_layout()
-        self.route()
+        self.DRC_LVS()
 
     def create_layout(self):
         """ The general organization is from left to right:
@@ -37,6 +36,7 @@ class hierarchical_predecode3x8(hierarchical_predecode):
                      ["inbar[0]", "inbar[1]", "in[2]",    "Z[1]", "vdd", "gnd"],
                      ["inbar[0]", "inbar[1]", "inbar[2]", "Z[0]", "vdd", "gnd"]]
         self.add_nand(connections)
+        self.route()
 
     def get_nand_input_line_combination(self):
         """ These are the decoder connections of the NAND gates to the A,B,C pins """

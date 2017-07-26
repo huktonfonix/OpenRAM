@@ -102,17 +102,21 @@ class hierarchical_predecode(design.design):
         for label in self.rails.keys():
             # these are not primary inputs, so they shouldn't have a
             # label or LVS complains about different names on one net
-            if label.startswith("A"):
-                self.add_rect(layer="metal2",
-                              offset=[self.rails[label], 0], 
-                              width=self.metal2_width,
-                              height=self.height)
-            else:
+            if label.startswith("in"):
                 self.add_layout_pin(text=label,
                                     layer="metal2",
                                     offset=[self.rails[label], 0], 
                                     width=self.metal2_width,
                                     height=self.height)
+            else:
+                self.add_rect(layer="metal2",
+                              offset=[self.rails[label], 0], 
+                              width=self.metal2_width,
+                              height=self.height)
+                # label for convenience, it is not a pin
+                self.add_label(text=label,
+                               layer="metal2",
+                               offset=[self.rails[label], 0])
 
     def add_input_inverters(self):
         """ Create the input inverters to invert input signals for the decode stage. """
@@ -304,7 +308,8 @@ class hierarchical_predecode(design.design):
 
 
     def route_vdd_gnd_from_rails(self):
-
+        """All the vdd and gnd are connected internally, so this just creates
+        a vdd/gnd rail at the top and bottom."""
 
         for num in range(0,self.number_of_outputs):
             # this will result in duplicate polygons for rails, but who cares
@@ -314,20 +319,22 @@ class hierarchical_predecode(design.design):
 
             # route vdd
             vdd_offset = gate_offset + self.inv.get_pin("vdd").ll().scale(1,y_dir) 
-            self.add_rect(layer="metal1",
-                          offset=vdd_offset,
-                          width=self.x_off_inv_2 + self.inv.width + self.metal2_width,
-                          height=self.metal1_width)
+            self.add_layout_pin(text="vdd",
+                                layer="metal1",
+                                offset=vdd_offset,
+                                width=self.x_off_inv_2 + self.inv.width + self.metal2_width,
+                                height=self.metal1_width)
             self.add_via(layers = ("metal1", "via1", "metal2"),
                          offset=[self.rails["vdd"] +  self.via_x_shift, vdd_offset.y + self.via_y_shift],
                          rotate=90)
 
             # route gnd
             gnd_offset = gate_offset+self.inv.get_pin("gnd").ll().scale(1,y_dir)
-            self.add_rect(layer="metal1",
-                          offset=gnd_offset,
-                          width=self.x_off_inv_2 + self.inv.width + self.metal2_width,
-                          height=self.metal1_width)
+            self.add_layout_pin(text="gnd",
+                                layer="metal1",
+                                offset=gnd_offset,
+                                width=self.x_off_inv_2 + self.inv.width + self.metal2_width,
+                                height=self.metal1_width)
             self.add_via(layers = ("metal1", "via1", "metal2"),
                          offset=[self.rails["gnd"] +  self.via_x_shift, gnd_offset.y + self.via_y_shift],
                          rotate=90)
