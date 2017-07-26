@@ -75,19 +75,15 @@ class hierarchical_predecode(design.design):
         self.x_off_inv_1 = self.number_of_inputs*self.metal2_pitch 
         
         # Creating the right hand side metal2 rails for output connections
-        for rail_index in range(2 * self.number_of_inputs + 2):
+        for rail_index in range(2 * self.number_of_inputs):
             xoffset = self.x_off_inv_1 + self.inv.width + ((rail_index+1) * self.metal2_pitch)
-            if rail_index == 0:
-                self.rails["vdd"]=xoffset
-            elif rail_index == 1:
-                self.rails["gnd"]=xoffset
-            elif rail_index < 2+self.number_of_inputs:
-                self.rails["Abar[{}]".format(rail_index-2)]=xoffset
+            if rail_index < self.number_of_inputs:
+                self.rails["Abar[{}]".format(rail_index)]=xoffset
             else:
-                self.rails["A[{}]".format(rail_index-self.number_of_inputs-2)]=xoffset
+                self.rails["A[{}]".format(rail_index-self.number_of_inputs)]=xoffset
 
         # x offset to NAND decoder includes the left rails, mid rails and inverters, plus an extra m2 pitch
-        self.x_off_nand = self.x_off_inv_1 + self.inv.width + (3 + 2*self.number_of_inputs) * self.metal2_pitch
+        self.x_off_nand = self.x_off_inv_1 + self.inv.width + (1 + 2*self.number_of_inputs) * self.metal2_pitch
 
                        
         # x offset to output inverters
@@ -324,9 +320,9 @@ class hierarchical_predecode(design.design):
                                 offset=vdd_offset,
                                 width=self.x_off_inv_2 + self.inv.width + self.metal2_width,
                                 height=self.metal1_width)
-            self.add_via(layers = ("metal1", "via1", "metal2"),
-                         offset=[self.rails["vdd"] +  self.via_x_shift, vdd_offset.y + self.via_y_shift],
-                         rotate=90)
+            # self.add_via(layers = ("metal1", "via1", "metal2"),
+            #              offset=[self.rails["vdd"] +  self.via_x_shift, vdd_offset.y + self.via_y_shift],
+            #              rotate=90)
 
             # route gnd
             gnd_offset = gate_offset+self.inv.get_pin("gnd").ll().scale(1,y_dir)
@@ -335,9 +331,9 @@ class hierarchical_predecode(design.design):
                                 offset=gnd_offset,
                                 width=self.x_off_inv_2 + self.inv.width + self.metal2_width,
                                 height=self.metal1_width)
-            self.add_via(layers = ("metal1", "via1", "metal2"),
-                         offset=[self.rails["gnd"] +  self.via_x_shift, gnd_offset.y + self.via_y_shift],
-                         rotate=90)
+            # self.add_via(layers = ("metal1", "via1", "metal2"),
+            #              offset=[self.rails["gnd"] +  self.via_x_shift, gnd_offset.y + self.via_y_shift],
+            #              rotate=90)
         
 
 
