@@ -109,10 +109,6 @@ class hierarchical_predecode(design.design):
                               offset=[self.rails[label], 0], 
                               width=self.metal2_width,
                               height=self.height)
-                # label for convenience, it is not a pin
-                self.add_label(text=label,
-                               layer="metal2",
-                               offset=[self.rails[label], 0])
 
     def add_input_inverters(self):
         """ Create the input inverters to invert input signals for the decode stage. """
