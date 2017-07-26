@@ -39,6 +39,21 @@ class layout:
         self.offset_attributes(coordinate)
         self.translate(coordinate)
 
+    def get_gate_offset(self, x_offset, height, inv_num):
+        """Gets the base offset and y orientation of stacked rows of gates
+        assuming a minwidth metal1 vdd/gnd rail. Input is which gate
+        in the stack from 0..n
+        """
+
+        if (inv_num % 2 == 0):
+            base_offset=vector(x_offset, inv_num * height)
+            y_dir = 1
+        else:
+            # we lose a rail after every 2 gates            
+            base_offset=vector(x_offset, (inv_num+1) * height - (inv_num%2)*drc["minwidth_metal1"])
+            y_dir = -1
+            
+        return (base_offset,y_dir)
 
 
     def find_lowest_coords(self):

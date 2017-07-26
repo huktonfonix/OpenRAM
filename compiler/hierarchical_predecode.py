@@ -103,12 +103,12 @@ class hierarchical_predecode(design.design):
                                     layer="metal2",
                                     offset=[self.rails[label], 0], 
                                     width=self.metal2_width,
-                                    height=self.height)
+                                    height=self.height - drc["metal2_to_metal2"])
             else:
                 self.add_rect(layer="metal2",
                               offset=[self.rails[label], 0], 
                               width=self.metal2_width,
-                              height=self.height)
+                              height=self.height - drc["metal2_to_metal2"])
 
     def add_input_inverters(self):
         """ Create the input inverters to invert input signals for the decode stage. """
@@ -194,7 +194,7 @@ class hierarchical_predecode(design.design):
         self.route_input_inverters()
         self.route_inputs_to_rails()
         self.route_nand_to_rails()
-        self.route_vdd_gnd_from_rails()
+        self.route_vdd_gnd()
 
     def route_inputs_to_rails(self):
         """ Route the uninverted inputs to the second set of rails """
@@ -255,24 +255,6 @@ class hierarchical_predecode(design.design):
                          rotate=90)
             
 
-
-    def get_gate_offset(self, x_offset, height, inv_num):
-        """ Gets the base offset and y orientation of stacked rows of gates.
-        Input is which gate in the stack from 0..n
-        """
-
-        if (inv_num % 2 == 0):
-            base_offset=vector(x_offset, inv_num * height)
-            y_dir = 1
-        else:
-            # we lose a rail after every 2 gates            
-            base_offset=vector(x_offset, (inv_num+1) * height - (inv_num%2)*self.metal1_width)
-            y_dir = -1
-            
-        return (base_offset,y_dir)
-
-    
-
     def route_nand_to_rails(self):
         # This 2D array defines the connection mapping 
         nand_input_line_combination = self.get_nand_input_line_combination()
@@ -299,9 +281,8 @@ class hierarchical_predecode(design.design):
 
 
 
-    def route_vdd_gnd_from_rails(self):
-        """All the vdd and gnd are connected internally, so this just creates
-        a vdd/gnd rail at the top and bottom."""
+    def route_vdd_gnd(self):
+        """ Add a pin for each row of vdd/gnd which are must-connects next level up. """
 
         for num in range(0,self.number_of_outputs):
             # this will result in duplicate polygons for rails, but who cares
@@ -316,9 +297,6 @@ class hierarchical_predecode(design.design):
                                 offset=vdd_offset,
                                 width=self.x_off_inv_2 + self.inv.width + self.metal2_width,
                                 height=self.metal1_width)
-            # self.add_via(layers = ("metal1", "via1", "metal2"),
-            #              offset=[self.rails["vdd"] +  self.via_x_shift, vdd_offset.y + self.via_y_shift],
-            #              rotate=90)
 
             # route gnd
             gnd_offset = gate_offset+self.inv.get_pin("gnd").ll().scale(1,y_dir)
@@ -327,9 +305,6 @@ class hierarchical_predecode(design.design):
                                 offset=gnd_offset,
                                 width=self.x_off_inv_2 + self.inv.width + self.metal2_width,
                                 height=self.metal1_width)
-            # self.add_via(layers = ("metal1", "via1", "metal2"),
-            #              offset=[self.rails["gnd"] +  self.via_x_shift, gnd_offset.y + self.via_y_shift],
-            #              rotate=90)
         
 
 
