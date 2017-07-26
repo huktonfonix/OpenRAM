@@ -93,8 +93,6 @@ class hierarchical_decoder(design.design):
         self.no_of_pre2x4=p2x4
         self.no_of_pre3x8=p3x8
 
-        # Stromg the index of the vertical rails in different groups. These
-        # vertical lines is used to connect pre-decoder to row-decoder
         self.predec_groups = []  # This array is a 2D array.
 
         # Distributing vertical rails to different groups. One group belongs to one pre-decoder.
@@ -297,8 +295,8 @@ class hierarchical_decoder(design.design):
             for i in range(len(self.predec_groups[0])):
                 for j in range(len(self.predec_groups[1])):
                     for k in range(len(self.predec_groups[2])):
-                        Z_index = (len(self.predec_groups[1]) * len(self.predec_groups[2])*i 
-                                       + len(self.predec_groups[2])*j + k)
+                        Z_index = len(self.predec_groups[1])*len(self.predec_groups[2]) * i \
+                                  + len(self.predec_groups[2])*j + k
                         pins = ["out[{0}]".format(i),
                                 "out[{0}]".format(j + len(self.predec_groups[0])),
                                 "out[{0}]".format(k + len(self.predec_groups[0]) + len(self.predec_groups[1])),
@@ -500,9 +498,9 @@ class hierarchical_decoder(design.design):
 
                         row_index = row_index + 1
 
-                    self.connect_rail(vector(self.rail_x_offsets[index_A], yoffset_A))
-                    self.connect_rail(vector(self.rail_x_offsets[index_B], yoffset_B))
-                    self.connect_rail(vector(self.rail_x_offsets[index_C], yoffset_C)) # contact_C_y_offset
+                        self.connect_rail(vector(self.rail_x_offsets[index_A], yoffset_A))
+                        self.connect_rail(vector(self.rail_x_offsets[index_B], yoffset_B))
+                        self.connect_rail(vector(self.rail_x_offsets[index_C], yoffset_C)) # contact_C_y_offset
 
     def route_vdd_gnd(self):
         """ Add a pin for each row of vdd/gnd which are must-connects next level up. """
