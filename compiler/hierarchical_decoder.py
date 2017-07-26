@@ -206,12 +206,12 @@ class hierarchical_decoder(design.design):
             pin = self.pre2_4.get_pin("in[{}]".format(i))
             
             if (self.num_inputs == 2):
-                pin_offset = pin.ll().scale(1,0)
+                pin_offset = pin.ll().scale(1,num*self.pre2_4.height)
             else:
-                pin_offset = vector(self.pre2_4.width,0) + pin.ll().scale(-1,0) - vector(drc["minwidth_metal2"],0)
+                pin_offset = vector(self.pre2_4.width,num*self.pre2_4.height) + pin.ll().scale(-1,0) - vector(drc["minwidth_metal2"],0)
             
             pin = self.pre2_4.get_pin("in[{}]".format(i))
-            self.add_layout_pin(text="A[{0}]".format(i + num * 2),
+            self.add_layout_pin(text="A[{0}]".format(i + 2*num ),
                                 layer="metal2", 
                                 offset=pin_offset,
                                 width=pin.width(),
