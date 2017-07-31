@@ -34,7 +34,6 @@ class tri_gate_array(design.design):
         """generate layout """
         self.add_pins()
         self.create_array()
-        self.add_metal_rails()
         self.add_layout_pins()
 
     def add_pins(self):
@@ -50,42 +49,20 @@ class tri_gate_array(design.design):
         """add tri gate to the array """
         for i in range(0,self.columns,self.words_per_row):
             name = "Xtri_gate{0}".format(i)
-            if (i % 2 == 0):
-                x_off = i * self.tri.width
+            if (i % 2 == 0 or self.words_per_row > 1):
+                base = vector(i*self.tri.width, 0)
                 mirror = "R0"
             else:
-                if (self.words_per_row == 1):
-                    x_off = (i + 1) * self.tri.width
-                    mirror = "MY"
-                else:
-                    x_off = i * self.tri.width
-                    mirror = "R0"
+                base = vector((i+1)*self.tri.width, 0)
+                mirror = "MY"
             self.add_inst(name=name,
                           mod=self.tri,
-                          offset=[x_off, 0],
+                          offset=base,
                           mirror = mirror)
             self.connect_inst(["in[{0}]".format(i),
                                "out[{0}]".format(i),
                                "en", "en_bar", "vdd", "gnd"])
 
-    def add_metal_rails(self):
-        """Connect en en_bar and vdd together """
-        width = self.tri.width * self.columns - (self.words_per_row - 1) * self.tri.width
-        en_pin = self.tri.get_pin("en")
-        self.add_rect(layer="metal1",
-                      offset=en_pin.ll().scale(0, 1),
-                      width=width,
-                      height=drc['minwidth_metal1'])
-        enbar_pin = self.tri.get_pin("en_bar")
-        self.add_rect(layer="metal1",
-                      offset=enbar_pin.ll().scale(0, 1),
-                      width=width,
-                      height=drc['minwidth_metal1'])
-        vdd_pin = self.tri.get_pin("vdd")
-        self.add_rect(layer="metal1",
-                      offset=vdd_pin.ll().scale(0, 1),
-                      width=width,
-                      height=drc['minwidth_metal1'])
 
     def add_layout_pins(self):
         gnd_pin = self.tri.get_pin("gnd")
@@ -124,20 +101,23 @@ class tri_gate_array(design.design):
 
 
         width = self.tri.width * self.columns - (self.words_per_row - 1) * self.tri.width
-        self.add_layout_pin(layer="metal1",
+        self.add_layout_pin(text="en",
+                            layer="metal1",
                             offset=en_pin.ll().scale(0, 1),
                             width=width,
-                            height=drc['minwidth_metal1'])
+                            height=drc["minwidth_metal1"])
         
-        self.add_rect(layer="metal1",
-                      offset=enbar_pin.ll().scale(0, 1),
-                      width=width,
-                      height=drc['minwidth_metal1'])
+        self.add_layout_pin(text="en_bar",
+                            layer="metal1",
+                            offset=enbar_pin.ll().scale(0, 1),
+                            width=width,
+                            height=drc["minwidth_metal1"])
         
-        self.add_rect(layer="metal1",
-                      offset=vdd_pin.ll().scale(0, 1),
-                      width=width,
-                      height=drc['minwidth_metal1'])
+        self.add_layout_pin(text="vdd",
+                            layer="metal1",
+                            offset=vdd_pin.ll().scale(0, 1),
+                            width=width,
+                            height=drc["minwidth_metal1"])
             
 
 

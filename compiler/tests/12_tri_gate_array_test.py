@@ -23,8 +23,8 @@ class tri_gate_array_test(unittest.TestCase):
 
         import tri_gate_array
 
-        debug.info(1, "Testing tri_gate_array for columns=16, word_size=8")
-        a = tri_gate_array.tri_gate_array(columns=16, word_size=8)
+        debug.info(1, "Testing tri_gate_array for columns=8, word_size=8")
+        a = tri_gate_array.tri_gate_array(columns=8, word_size=8)
         OPTS.check_lvsdrc = True
         self.local_check(a)
 
@@ -32,8 +32,8 @@ class tri_gate_array_test(unittest.TestCase):
         import design
         design.design.name_map=[]
 
-        debug.info(1, "Testing tri_gate_array for columns=8, word_size=8")
-        a = tri_gate_array.tri_gate_array(columns=8, word_size=8)
+        debug.info(1, "Testing tri_gate_array for columns=16, word_size=8")
+        a = tri_gate_array.tri_gate_array(columns=16, word_size=8)
         OPTS.check_lvsdrc = True
         self.local_check(a)
         
