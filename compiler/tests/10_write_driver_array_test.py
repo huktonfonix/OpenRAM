@@ -25,13 +25,16 @@ class write_driver_test(unittest.TestCase):
 
         debug.info(2, "Testing write_driver_array for columns=16, word_size=8")
         OPTS.check_lvsdrc = False
-        a = write_driver_array.write_driver_array(columns=16, word_size=8, name="wd16x8")
+        a = write_driver_array.write_driver_array(columns=16, word_size=8)
         OPTS.check_lvsdrc = True
         self.local_check(a)
 
+        globals.init_openram("config_20_{0}".format(OPTS.tech_name))
+        globals.end_openram()
+
         debug.info(2, "Testing write_driver_array for columns=8, word_size=8")
         OPTS.check_lvsdrc = False
-        a = write_driver_array.write_driver_array(columns=8, word_size=8, name="wd8x8")
+        a = write_driver_array.write_driver_array(columns=8, word_size=8)
         OPTS.check_lvsdrc = True
         self.local_check(a)
         
