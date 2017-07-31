@@ -34,9 +34,9 @@ class write_driver_array(design.design):
     def add_pins(self):
         for i in range(0,self.columns,self.words_per_row):
             self.add_pin("data[{0}]".format(i/self.words_per_row))
-        for i in range(0,self.columns,self.word_size):
+        for i in range(0,self.columns,self.words_per_row):
             self.add_pin("bl[{0}]".format(i))
-        for i in range(0,self.columns,self.word_size):
+        for i in range(0,self.columns,self.words_per_row):
             self.add_pin("br[{0}]".format(i))
         self.add_pin("wen")
         self.add_pin("vdd")
