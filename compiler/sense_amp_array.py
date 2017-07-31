@@ -37,7 +37,7 @@ class sense_amp_array(design.design):
             self.add_pin("br[{0}]".format(i))
 
         # The output pins come last...
-        for i in range(0,self.word_size,self.words_per_row):
+        for i in range(0,self.row_size,self.words_per_row):
             self.add_pin("data[{0}]".format(i/self.words_per_row))
 
         self.add_pin("sclk")
@@ -48,7 +48,7 @@ class sense_amp_array(design.design):
 
         self.add_sense_amp()
         self.connect_rails()
-        self.offset_all_coordinates()
+        #self.offset_all_coordinates()
 
         
 
@@ -70,7 +70,7 @@ class sense_amp_array(design.design):
                           mod=self.amp,
                           offset=amp_position)
             self.connect_inst(["bl[{0}]".format(i),"br[{0}]".format(i), 
-                               "data_out[{0}]".format(i/self.words_per_row), 
+                               "data[{0}]".format(i/self.words_per_row), 
                                "sclk", "vdd", "gnd"])
 
             self.add_layout_pin(text="bl[{0}]".format(i),
