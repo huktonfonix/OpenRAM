@@ -47,7 +47,7 @@ class write_driver_array(design.design):
         #self.offset_all_coordinates()
 
     def create_write_array(self):
-        for i in range(0,self.columns):
+        for i in range(0,self.columns,self.words_per_row):
             name = "Xwrite_driver{}".format(i)
             if (i % 2 == 0 or self.words_per_row>1):
                 base = vector(i * self.driver.width,0)
