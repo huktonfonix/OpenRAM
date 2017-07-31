@@ -47,12 +47,19 @@ class write_driver_array(design.design):
         #self.offset_all_coordinates()
 
     def create_write_array(self):
-        for i in range(0,self.columns,self.words_per_row):
+        for i in range(0,self.columns):
             name = "Xwrite_driver%d".format(i)
-            x_off = i*self.driver.width
+            if (i % 2 == 0 or self.words_per_row>1):
+                base = vector(i * self.driver.width,0)
+                mirror = "R0"
+            else:
+                base = vector((i+1) * self.driver.width,0)
+                mirror = "MY"
+            
             self.add_inst(name=name,
                           mod=self.driver,
-                          offset=[x_off, 0])
+                          offset=base,
+                          mirror=mirror)
             self.connect_inst(["data[{0}]".format(i/self.words_per_row),
                                "bl[{0}]".format(i),
                                "br[{0}]".format(i),
