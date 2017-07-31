@@ -80,33 +80,29 @@ class ms_flop_array(design.design):
             i_str = "[{0}]".format(i)
             if (i % 2 == 0 or self.words_per_row > 1):
                 base = vector(i * self.ms_flop.width * self.words_per_row, 0)
-                offsets["gnd"+i_str] = base + ms.get_pin("gnd").ll()
-                offsets["din"+i_str] = base + ms.get_pin("din").ll()
-                offsets["dout"+i_str] = base + ms.get_pin("dout").ll()
-                offsets["dout_bar"+i_str] = base + ms.get_pin("dout_bar").ll()
+                x_dir = 1
             else:
                 base = vector((i + 1) * self.ms_flop.width, 0)
-                offsets["gnd"+i_str] = base + ms.get_pin("gnd").ll().scale(-1,1)
-                offsets["din"+i_str] = base + ms.get_pin("din").ll().scale(-1,1)
-                offsets["dout"+i_str] = base + ms.get_pin("dout").ll().scale(-1,1)
-                offsets["dout_bar"+i_str] = base + ms.get_pin("dout_bar").ll().scale(-1,1)
+                x_dir = -1
 
+            gnd_pin = ms.get_pin("gnd")
+            # this name is not indexed so that it is a must-connect at next hierarchical level
+            # it is connected by abutting the bitcell array
+            self.add_layout_pin(text=p,
+                                layer="metal2",
+                                offset=base + gnd_pin.ll().scale(x_dir,1),
+                                width=gnd_pin.width(),
+                                height=gnd_pin.height())
 
-            for p in ms.pins:
-                if p in ["vdd","clk"]: continue
-                if p=="gnd":
-                    self.add_layout_pin(text=p,
-                                        layer="metal2",
-                                        offset=offsets[p+i_str],
-                                        width=ms.get_pin(p).width(),
-                                        height=ms.get_pin(p).height())
-                else:
-                    self.add_layout_pin(text=p+i_str,
-                                        layer="metal2",
-                                        offset=offsets[p+i_str],
-                                        width=ms.get_pin(p).width(),
-                                        height=ms.get_pin(p).height())
+            for p in ["din", "dout", "dout_bar"]:
+                cur_pin = ms.get_pin("gnd")                
+                self.add_layout_pin(text=p+i_str,
+                                    layer="metal2",
+                                    offset=base + cur_pin.ll().scale(x_dir,1),
+                                    width=cur_pin.width(),
+                                    height=cur_pin.height())
 
+            
         # Continous "clk" rail along with label.
         self.add_layout_pin(text="clk",
                             layer="metal1",
