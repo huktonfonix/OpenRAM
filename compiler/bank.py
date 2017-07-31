@@ -28,8 +28,7 @@ class bank(design.design):
             mod_class = getattr(class_file , config_mod_name)
             setattr (self, "mod_"+mod_name, mod_class)
 
-        self.bitcell_height = self.mod_bitcell.chars["height"]
-        self.tri_gate_chars = self.mod_tri_gate.chars
+        self.bitcell_height = self.mod_bitcell.height
 
         if name == "":
             self.name = "bank_{0}_{1}".format(word_size, num_words)
@@ -311,17 +310,10 @@ class bank(design.design):
                       mod=self.sens_amp_array,
                       offset=self.sens_amp_array_position)
         temp = []
-        if (self.words_per_row == 1):
-            for j in range(self.word_size):
-                temp.append("bl[{0}]".format(j*self.words_per_row))
-                temp.append("br[{0}]".format(j*self.words_per_row))
-        else:
-            for j in range(self.word_size):
-                temp.append("bl_out[{0}]".format(j*self.words_per_row))
-                temp.append("br_out[{0}]".format(j*self.words_per_row))
-
-        for i in range(self.word_size):
-            temp.append("data_out[{0}]".format(i))
+        for i in range(0,self.num_cols,self.words_per_row):
+            temp.append("data_out[{0}]".format(i/self.words_per_row))
+            temp.append("bl[{0}]".format(i))
+            temp.append("br[{0}]".format(i))
         temp = temp + ["s_en", "vdd", "gnd"]
         self.connect_inst(temp)
 
@@ -335,16 +327,10 @@ class bank(design.design):
                       offset=self.write_driver_array_position)
 
         temp = []
-        for i in range(self.word_size):
-            temp.append("data_in[{0}]".format(i))
-        if (self.words_per_row == 1):
-            for j in range(self.word_size):
-                temp.append("bl[{0}]".format(j*self.words_per_row))
-                temp.append("br[{0}]".format(j*self.words_per_row))
-        else:
-            for j in range(self.word_size):
-                temp.append("bl_out[{0}]".format(j*self.words_per_row))
-                temp.append("br_out[{0}]".format(j*self.words_per_row))
+        for i in range(0,self.num_cols,self.words_per_row):
+            temp.append("data_in[{0}]".format(i/self.words_per_row))
+            temp.append("bl[{0}]".format(i))
+            temp.append("br[{0}]".format(i))
         temp = temp + ["w_en", "vdd", "gnd"]
         self.connect_inst(temp)
 
@@ -355,13 +341,11 @@ class bank(design.design):
         self.ms_flop_data_in_offset = self.module_offset 
         self.add_inst(name="data_in_flop_array", 
                       mod=self.msf_data_in, 
-
                       offset=self.ms_flop_data_in_offset)
 
         temp = []
         for i in range(self.word_size):
             temp.append("DATA[{0}]".format(i))
-        for i in range(self.word_size):
             temp.append("data_in[{0}]".format(i))
             temp.append("data_in_bar[{0}]".format(i))
         temp = temp + ["clk_bar", "vdd", "gnd"]

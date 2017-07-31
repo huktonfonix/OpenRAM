@@ -33,12 +33,9 @@ class sense_amp_array(design.design):
     def add_pins(self):
 
         for i in range(0,self.row_size,self.words_per_row):
+            self.add_pin("data[{0}]".format(i/self.words_per_row))
             self.add_pin("bl[{0}]".format(i))
             self.add_pin("br[{0}]".format(i))
-
-        # The output pins come last...
-        for i in range(0,self.row_size,self.words_per_row):
-            self.add_pin("data[{0}]".format(i/self.words_per_row))
 
         self.add_pin("sclk")
         self.add_pin("vdd")
