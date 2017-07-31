@@ -88,14 +88,14 @@ class ms_flop_array(design.design):
             gnd_pin = ms.get_pin("gnd")
             # this name is not indexed so that it is a must-connect at next hierarchical level
             # it is connected by abutting the bitcell array
-            self.add_layout_pin(text=p,
+            self.add_layout_pin(text="gnd",
                                 layer="metal2",
                                 offset=base + gnd_pin.ll().scale(x_dir,1),
                                 width=gnd_pin.width(),
                                 height=gnd_pin.height())
 
             for p in ["din", "dout", "dout_bar"]:
-                cur_pin = ms.get_pin("gnd")                
+                cur_pin = ms.get_pin(p)                
                 self.add_layout_pin(text=p+i_str,
                                     layer="metal2",
                                     offset=base + cur_pin.ll().scale(x_dir,1),
