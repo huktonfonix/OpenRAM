@@ -11,7 +11,7 @@ class write_driver_array(design.design):
     Dynamically generated write driver array of all bitlines.
     """
 
-    def __init__(self, columns, word_size, name="write_driver_array"):
+    def __init__(self, columns, word_size):
         design.design.__init__(self, name)
         debug.info(1, "Creating {0}".format(self.name))
 

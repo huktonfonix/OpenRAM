@@ -30,6 +30,10 @@ class dff_array_test(unittest.TestCase):
         OPTS.check_lvsdrc = True
         self.local_check(a)
 
+        # reset the static duplicate name checker for unit tests
+        import design
+        design.design.name_map=[]
+
         debug.info(1, "Testing no space DFF array")
         OPTS.check_lvsdrc = False
         a = ms_flop_array.ms_flop_array(columns=8, word_size=8)

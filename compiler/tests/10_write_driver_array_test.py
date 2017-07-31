@@ -29,8 +29,9 @@ class write_driver_test(unittest.TestCase):
         OPTS.check_lvsdrc = True
         self.local_check(a)
 
-        globals.init_openram("config_20_{0}".format(OPTS.tech_name))
-        globals.end_openram()
+        # reset the static duplicate name checker for unit tests
+        import design
+        design.design.name_map=[]
 
         debug.info(2, "Testing write_driver_array for columns=8, word_size=8")
         OPTS.check_lvsdrc = False

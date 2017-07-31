@@ -10,7 +10,8 @@ class sense_amp_array(design.design):
     Dynamically generated sense amp array for all bitlines.
     """
 
-    def __init__(self, word_size, words_per_row, name="sense_amp_array"):
+    def __init__(self, word_size, words_per_row):
+        name = "sense_amp__array"
         design.design.__init__(self, name)
         debug.info(1, "Creating {0}".format(self.name))
 
