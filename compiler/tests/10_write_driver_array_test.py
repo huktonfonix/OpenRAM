@@ -23,9 +23,9 @@ class write_driver_test(unittest.TestCase):
 
         import write_driver_array
 
-        debug.info(2, "Testing write_driver_array for columns=128, word_size=128")
+        debug.info(2, "Testing write_driver_array for columns=16, word_size=8")
         OPTS.check_lvsdrc = False
-        a = write_driver_array.write_driver_array(columns=16, word_size=16)
+        a = write_driver_array.write_driver_array(columns=16, word_size=8)
         OPTS.check_lvsdrc = True
         self.local_check(a)
 

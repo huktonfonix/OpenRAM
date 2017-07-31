@@ -53,14 +53,15 @@ class sense_amp_array(design.design):
         
 
     def add_sense_amp(self):
+            
+        bl_pin = self.amp.get_pin("BL")            
+        br_pin = self.amp.get_pin("BR")
+        dout_pin = self.amp.get_pin("Dout")
+        
         for i in range(0,self.row_size,self.words_per_row):
 
             name = "sa_d{0}".format(i)
             amp_position = vector(self.amp.width * i, 0)
-            
-            bl_pin = self.amp.get_pin("BL")            
-            br_pin = self.amp.get_pin("BR")
-            dout_pin = self.amp.get_pin("Dout")
             
             bl_offset = amp_position + bl_pin.ll().scale(1,0)
             br_offset = amp_position + br_pin.ll().scale(1,0)
