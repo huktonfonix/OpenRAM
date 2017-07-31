@@ -14,6 +14,7 @@ import calibre
 OPTS = globals.get_opts()
 
 
+@unittest.skip("SKIPPING 07_single_level_column_mux_test")
 class single_level_column_mux_test(unittest.TestCase):
 
     def runTest(self):
