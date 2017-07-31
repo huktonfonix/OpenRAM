@@ -84,7 +84,7 @@ class write_driver_array(design.design):
             din_offset = base + din_pin.ll().scale(x_dir,1)
             
 
-            self.add_layout_pin(text="data_in[{0}]".format(i),
+            self.add_layout_pin(text="data[{0}]".format(i),
                                 layer="metal2",
                                 offset=din_offset,
                                 width=x_dir*din_pin.width(),
