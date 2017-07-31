@@ -22,6 +22,12 @@ class ms_flop_array(design.design):
 
         c = reload(__import__(OPTS.config.ms_flop))
         self.mod_ms_flop = getattr(c, OPTS.config.ms_flop)
+        self.ms = self.mod_ms_flop("ms_flop")
+        self.add_mod(self.ms)
+
+        self.width = self.columns * self.ms.width
+        self.height = self.ms.height
+        self.words_per_row = self.columns / self.word_size
 
         self.create_layout()
 
@@ -32,16 +38,6 @@ class ms_flop_array(design.design):
         self.create_ms_flop_array()
         self.add_layout_pins()
         self.DRC_LVS()
-
-    def add_modules(self):
-        self.ms = self.mod_ms_flop("ms_flop")
-        self.add_mod(self.ms)
-
-    def setup_layout_constants(self):
-        self.width = self.columns * self.ms.width
-        self.height = self.ms.height
-        self.words_per_row = self.columns / self.word_size
-
 
     def add_pins(self):
         for i in range(self.word_size):
@@ -54,10 +50,10 @@ class ms_flop_array(design.design):
 
     def create_ms_flop_array(self):
         for i in range(self.word_size):
-            name = "Xdff%d" % i
-            if (i % 2 == 0):
+            name = "Xdff{0}".format(i)
+            if (i % 2 == 0 or self.words_per_row>1):
                 x_off = i * self.ms.width * self.words_per_row
-                mirror = "None"
+                mirror = "R0"
             else:
                 if (self.words_per_row == 1):
                     x_off = (i + 1) * self.ms.width
@@ -80,10 +76,10 @@ class ms_flop_array(design.design):
         for i in range(self.word_size):
             i_str = "[{0}]".format(i)
             if (i % 2 == 0 or self.words_per_row > 1):
-                base = vector(i * self.ms_flop.width * self.words_per_row, 0)
+                base = vector(i * self.ms.width * self.words_per_row, 0)
                 x_dir = 1
             else:
-                base = vector((i + 1) * self.ms_flop.width, 0)
+                base = vector((i + 1) * self.ms.width, 0)
                 x_dir = -1
 
             gnd_pin = self.ms.get_pin("gnd")
@@ -120,6 +116,6 @@ class ms_flop_array(design.design):
 
 
     def delay(self, slew, load=0.0):
-        result = self.ms_flop.delay(slew = slew, 
-                                    load = load)
+        result = self.ms.delay(slew = slew, 
+                               load = load)
         return result

@@ -23,9 +23,9 @@ class write_driver_test(unittest.TestCase):
 
         import write_driver_array
 
-        debug.info(2, "Testing write_driver_array for columns=16, word_size=8")
+        debug.info(2, "Testing write_driver_array for columns=8, word_size=8")
         OPTS.check_lvsdrc = False
-        a = write_driver_array.write_driver_array(columns=16, word_size=8)
+        a = write_driver_array.write_driver_array(columns=8, word_size=8)
         OPTS.check_lvsdrc = True
         self.local_check(a)
 
@@ -33,9 +33,9 @@ class write_driver_test(unittest.TestCase):
         import design
         design.design.name_map=[]
 
-        debug.info(2, "Testing write_driver_array for columns=8, word_size=8")
+        debug.info(2, "Testing write_driver_array for columns=16, word_size=8")
         OPTS.check_lvsdrc = False
-        a = write_driver_array.write_driver_array(columns=8, word_size=8)
+        a = write_driver_array.write_driver_array(columns=16, word_size=8)
         OPTS.check_lvsdrc = True
         self.local_check(a)
         

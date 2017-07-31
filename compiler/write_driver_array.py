@@ -80,18 +80,18 @@ class write_driver_array(design.design):
             self.add_layout_pin(text="data_in[{0}]".format(i),
                                 layer="metal2",
                                 offset=din_offset,
-                                width=din_pin.width(),
+                                width=x_dir*din_pin.width(),
                                 height=din_pin.height())
             self.add_layout_pin(text="bl[{0}]".format(i),
                                 layer="metal2",
                                 offset=bl_offset,
-                                width=bl_pin.width(),
+                                width=x_dir*bl_pin.width(),
                                 height=bl_pin.height())
                            
             self.add_layout_pin(text="br[{0}]".format(i),
                                 layer="metal2",
                                 offset=br_offset,
-                                width=br_pin.width(),
+                                width=x_dir*br_pin.width(),
                                 height=br_pin.height())
                            
 

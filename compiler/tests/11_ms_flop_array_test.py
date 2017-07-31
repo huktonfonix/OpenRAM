@@ -24,9 +24,9 @@ class dff_array_test(unittest.TestCase):
 
         import ms_flop_array
 
-        debug.info(1, "Testing spaced DFF array")
+        debug.info(2, "Testing ms_flop_array for columns=8, word_size=8")
         OPTS.check_lvsdrc = False
-        a = ms_flop_array.ms_flop_array(columns=16, word_size=8)
+        a = ms_flop_array.ms_flop_array(columns=8, word_size=8)
         OPTS.check_lvsdrc = True
         self.local_check(a)
 
@@ -34,9 +34,9 @@ class dff_array_test(unittest.TestCase):
         import design
         design.design.name_map=[]
 
-        debug.info(1, "Testing no space DFF array")
+        debug.info(2, "Testing ms_flop_array for columns=16, word_size=8")
         OPTS.check_lvsdrc = False
-        a = ms_flop_array.ms_flop_array(columns=8, word_size=8)
+        a = ms_flop_array.ms_flop_array(columns=16, word_size=8)
         OPTS.check_lvsdrc = True
         self.local_check(a)
         
