@@ -32,8 +32,6 @@ class ms_flop_array(design.design):
         self.create_layout()
 
     def create_layout(self):
-        self.add_modules()
-        self.setup_layout_constants()
         self.add_pins()
         self.create_ms_flop_array()
         self.add_layout_pins()
@@ -49,56 +47,65 @@ class ms_flop_array(design.design):
         self.add_pin("gnd")
 
     def create_ms_flop_array(self):
-        for i in range(self.word_size):
+        for i in range(0,self.columns,self.words_per_row):
             name = "Xdff{0}".format(i)
             if (i % 2 == 0 or self.words_per_row>1):
-                x_off = i * self.ms.width * self.words_per_row
+                base = vector(i*self.ms.width,0)
                 mirror = "R0"
             else:
-                if (self.words_per_row == 1):
-                    x_off = (i + 1) * self.ms.width
-                    mirror="MY"
-                else:
-                    x_off = i * self.ms.width * self.words_per_row
+                base = vector((i+1)*self.ms.width,0)
+                mirror = "MY"
             self.add_inst(name=name,
                           mod=self.ms,
-                          offset=[x_off, 0], 
+                          offset=base, 
                           mirror=mirror)
-            self.connect_inst(["din[{0}]".format(i),
-                               "dout[{0}]".format(i),
-                               "dout_bar[{0}]".format(i),
+            self.connect_inst(["din[{0}]".format(i/self.words_per_row),
+                               "dout[{0}]".format(i/self.words_per_row),
+                               "dout_bar[{0}]".format(i/self.words_per_row),
                                "clk",
                                "vdd", "gnd"])
 
     def add_layout_pins(self):
         
-        offsets = {}
-        for i in range(self.word_size):
+        gnd_pin = self.ms.get_pin("gnd")
+        din_pin = self.ms.get_pin("din")
+        dout_pin = self.ms.get_pin("dout")
+        doutbar_pin = self.ms.get_pin("dout_bar")
+        for i in range(0,self.columns,self.words_per_row):
             i_str = "[{0}]".format(i)
             if (i % 2 == 0 or self.words_per_row > 1):
-                base = vector(i * self.ms.width * self.words_per_row, 0)
+                base = vector(i * self.ms.width, 0)
                 x_dir = 1
             else:
-                base = vector((i + 1) * self.ms.width, 0)
+                base = vector((i+1)*self.ms.width, 0)
                 x_dir = -1
 
-            gnd_pin = self.ms.get_pin("gnd")
             # this name is not indexed so that it is a must-connect at next hierarchical level
             # it is connected by abutting the bitcell array
             self.add_layout_pin(text="gnd",
                                 layer="metal2",
                                 offset=base + gnd_pin.ll().scale(x_dir,1),
-                                width=gnd_pin.width(),
+                                width=x_dir*gnd_pin.width(),
                                 height=gnd_pin.height())
 
-            for p in ["din", "dout", "dout_bar"]:
-                cur_pin = self.ms.get_pin(p)                
-                self.add_layout_pin(text=p+i_str,
-                                    layer="metal2",
-                                    offset=base + cur_pin.ll().scale(x_dir,1),
-                                    width=cur_pin.width(),
-                                    height=cur_pin.height())
+            self.add_layout_pin(text="din"+i_str,
+                                layer="metal2",
+                                offset=base + din_pin.ll().scale(x_dir,1),
+                                width=x_dir*din_pin.width(),
+                                height=din_pin.height())
 
+            self.add_layout_pin(text="dout"+i_str,
+                                layer="metal2",
+                                offset=base + dout_pin.ll().scale(x_dir,1),
+                                width=x_dir*dout_pin.width(),
+                                height=dout_pin.height())
+
+            self.add_layout_pin(text="dout_bar"+i_str,
+                                layer="metal2",
+                                offset=base + doutbar_pin.ll().scale(x_dir,1),
+                                width=x_dir*doutbar_pin.width(),
+                                height=doutbar_pin.height())
+            
             
         # Continous "clk" rail along with label.
         self.add_layout_pin(text="clk",
