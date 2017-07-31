@@ -34,12 +34,12 @@ class ms_flop_array(design.design):
         self.DRC_LVS()
 
     def add_modules(self):
-        self.ms_flop = self.mod_ms_flop("ms_flop")
-        self.add_mod(self.ms_flop)
+        self.ms = self.mod_ms_flop("ms_flop")
+        self.add_mod(self.ms)
 
     def setup_layout_constants(self):
-        self.width = self.columns * self.ms_flop.width
-        self.height = self.ms_flop.height
+        self.width = self.columns * self.ms.width
+        self.height = self.ms.height
         self.words_per_row = self.columns / self.word_size
 
 
@@ -56,16 +56,16 @@ class ms_flop_array(design.design):
         for i in range(self.word_size):
             name = "Xdff%d" % i
             if (i % 2 == 0):
-                x_off = i * self.ms_flop.width * self.words_per_row
+                x_off = i * self.ms.width * self.words_per_row
                 mirror = "None"
             else:
                 if (self.words_per_row == 1):
-                    x_off = (i + 1) * self.ms_flop.width
+                    x_off = (i + 1) * self.ms.width
                     mirror="MY"
                 else:
-                    x_off = i * self.ms_flop.width * self.words_per_row
+                    x_off = i * self.ms.width * self.words_per_row
             self.add_inst(name=name,
-                          mod=self.ms_flop,
+                          mod=self.ms,
                           offset=[x_off, 0], 
                           mirror=mirror)
             self.connect_inst(["din[{0}]".format(i),
@@ -76,7 +76,6 @@ class ms_flop_array(design.design):
 
     def add_layout_pins(self):
         
-        ms = self.ms_flop
         offsets = {}
         for i in range(self.word_size):
             i_str = "[{0}]".format(i)
@@ -87,7 +86,7 @@ class ms_flop_array(design.design):
                 base = vector((i + 1) * self.ms_flop.width, 0)
                 x_dir = -1
 
-            gnd_pin = ms.get_pin("gnd")
+            gnd_pin = self.ms.get_pin("gnd")
             # this name is not indexed so that it is a must-connect at next hierarchical level
             # it is connected by abutting the bitcell array
             self.add_layout_pin(text="gnd",
@@ -97,7 +96,7 @@ class ms_flop_array(design.design):
                                 height=gnd_pin.height())
 
             for p in ["din", "dout", "dout_bar"]:
-                cur_pin = ms.get_pin(p)                
+                cur_pin = self.ms.get_pin(p)                
                 self.add_layout_pin(text=p+i_str,
                                     layer="metal2",
                                     offset=base + cur_pin.ll().scale(x_dir,1),
@@ -108,14 +107,14 @@ class ms_flop_array(design.design):
         # Continous "clk" rail along with label.
         self.add_layout_pin(text="clk",
                             layer="metal1",
-                            offset=ms.get_pin("clk").ll().scale(0,1),
+                            offset=self.ms.get_pin("clk").ll().scale(0,1),
                             width=self.width,
                             height=drc["minwidth_metal1"])
 
         # Continous "Vdd" rail along with label.
         self.add_layout_pin(text="vdd",
                             layer="metal1",
-                            offset=ms.get_pin("vdd").ll().scale(0,1),
+                            offset=self.ms.get_pin("vdd").ll().scale(0,1),
                             width=self.width,
                             height=drc["minwidth_metal1"])
 

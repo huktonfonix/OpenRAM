@@ -64,11 +64,16 @@ class write_driver_array(design.design):
         din_pin = self.driver.get_pin("din")
         
         for i in range(0,self.columns,self.words_per_row):
-            base = vector(i*self.driver.width, 0)
-
-            bl_offset = base + bl_pin.ll()
-            br_offset = base + br_pin.ll()
-            din_offset = base + din_pin.ll()
+            if (i % 2 == 0 or self.words_per_row > 1):
+                base = vector(i*self.driver.width, 0)
+                x_dir = 1
+            else:
+                base = vector((i+1)*self.driver.width, 0)
+                x_dir = -1
+            
+            bl_offset = base + bl_pin.ll().scale(x_dir,1)
+            br_offset = base + br_pin.ll().scale(x_dir,1)
+            din_offset = base + din_pin.ll().scale(x_dir,1)
             
 
             self.add_layout_pin(text="data_in[{0}]".format(i),

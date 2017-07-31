@@ -24,12 +24,18 @@ class dff_array_test(unittest.TestCase):
 
         import ms_flop_array
 
-        debug.info(1, "Testing sample for dff_array")
+        debug.info(1, "Testing spaced DFF array")
         OPTS.check_lvsdrc = False
-        a = ms_flop_array.ms_flop_array(columns=64, word_size=32)
+        a = ms_flop_array.ms_flop_array(columns=16, word_size=8)
         OPTS.check_lvsdrc = True
         self.local_check(a)
 
+        debug.info(1, "Testing no space DFF array")
+        OPTS.check_lvsdrc = False
+        a = ms_flop_array.ms_flop_array(columns=8, word_size=8)
+        OPTS.check_lvsdrc = True
+        self.local_check(a)
+        
         globals.end_openram()
 
     def local_check(self, a):

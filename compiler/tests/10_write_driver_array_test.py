@@ -29,6 +29,12 @@ class write_driver_test(unittest.TestCase):
         OPTS.check_lvsdrc = True
         self.local_check(a)
 
+        debug.info(2, "Testing write_driver_array for columns=8, word_size=8")
+        OPTS.check_lvsdrc = False
+        a = write_driver_array.write_driver_array(columns=8, word_size=8)
+        OPTS.check_lvsdrc = True
+        self.local_check(a)
+        
         globals.end_openram()
 
     def local_check(self, a):

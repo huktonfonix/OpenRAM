@@ -30,6 +30,12 @@ class sense_amp_test(unittest.TestCase):
         OPTS.check_lvsdrc = True
         self.local_check(a)
 
+        debug.info(2, "Testing sense_amp_array for word_size=4, words_per_row=4")
+        OPTS.check_lvsdrc = False
+        a = sense_amp_array.sense_amp_array(word_size=4, words_per_row=4)
+        OPTS.check_lvsdrc = True
+        self.local_check(a)
+        
         globals.end_openram()
         
     def local_check(self, a):
