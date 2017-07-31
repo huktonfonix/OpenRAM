@@ -173,13 +173,11 @@ class bank(design.design):
 
     def create_modules(self):
         """ Create all the modules using the class loader """
-        self.bitcell_array = self.mod_bitcell_array(name="bitcell_array", 
-                                                    cols=self.num_cols,
+        self.bitcell_array = self.mod_bitcell_array(cols=self.num_cols,
                                                     rows=self.num_rows)
         self.add_mod(self.bitcell_array)
 
-        self.precharge_array = self.mod_precharge_array(name="precharge_array", 
-                                                        columns=self.num_cols,
+        self.precharge_array = self.mod_precharge_array(columns=self.num_cols,
                                                         ptx_width=drc["minwidth_tx"])
         self.add_mod(self.precharge_array)
 
@@ -215,8 +213,7 @@ class bank(design.design):
                                                       word_size=self.word_size)
         self.add_mod(self.tri_gate_array)
 
-        self.wordline_driver = self.mod_wordline_driver(name="wordline_driver", 
-                                                        rows=self.num_rows)
+        self.wordline_driver = self.mod_wordline_driver(rows=self.num_rows)
         #self.wordline_driver.logic_effort_sizing(self.num_cols)
         self.add_mod(self.wordline_driver)
 

@@ -12,11 +12,13 @@ class ms_flop_array(design.design):
     hierdecoder
     """
 
-    def __init__(self, name, columns, word_size):
+    def __init__(self, columns, word_size, name=""):
         self.columns = columns
         self.word_size = word_size
+        if name=="":
+            name = "flop_array_c{0}_w{1}".format(columns,word_size)
         design.design.__init__(self, name)
-        debug.info(1, "Creating %s" % self.name)
+        debug.info(1, "Creating %s".format(self.name))
 
         c = reload(__import__(OPTS.config.ms_flop))
         self.mod_ms_flop = getattr(c, OPTS.config.ms_flop)

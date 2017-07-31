@@ -15,8 +15,8 @@ class wordline_driver(design.design):
     Generates the wordline-driver to drive the bitcell
     """
 
-    def __init__(self, name, rows):
-        design.design.__init__(self, name)
+    def __init__(self, rows):
+        design.design.__init__(self, "wordline_driver")
 
         self.rows = rows
         self.add_pins()

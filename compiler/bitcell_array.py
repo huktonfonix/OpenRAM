@@ -13,8 +13,8 @@ class bitcell_array(design.design):
     Connects the word lines and bit lines.
     """
 
-    def __init__(self, name, cols, rows):
-        design.design.__init__(self, name)
+    def __init__(self, cols, rows):
+        design.design.__init__(self, "bitcell_array")
         debug.info(1, "Creating {0} {1} x {2}".format(self.name, rows, cols))
 
 
