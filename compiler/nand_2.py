@@ -337,11 +337,11 @@ class nand_2(design.design):
                          rotate=90)
 
         input_length = self.pmos2.poly_positions[0].x - self.poly_contact.height
-        self.input_position2 = vector(xoffset - self.poly_contact.width, 
-                                      yoffset + self.poly_contact.via_layer_position.x)
+        input_position2 = vector(xoffset - self.poly_contact.width, 
+                                 yoffset + self.poly_contact.via_layer_position.x)
         self.add_layout_pin(text="B",
                             layer="metal1",
-                            offset=self.input_position2.scale(0,1),
+                            offset=input_position2.scale(0,1),
                             width=(input_length + self.pmos_position2.x + drc["minwidth_poly"]),
                             height=drc["minwidth_metal1"])
 
@@ -350,7 +350,7 @@ class nand_2(design.design):
         yoffset = (self.nmos1.height - 2 * drc["minwidth_metal1"] / 3 + 
             (self.height - self.pmos1.height - self.nmos1.height - drc["minwidth_metal1"]) / 2 )
         xoffset = self.drain_position.x
-        offset = self.output_position = vector(xoffset, yoffset)
+        offset = vector(xoffset, yoffset)
         output_length = self.width - xoffset
         self.add_layout_pin(text="Z",
                             layer="metal1",

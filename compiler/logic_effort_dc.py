@@ -46,16 +46,13 @@ class logic_effort_dc(design.design):
 
         self.create_inv_list()
 
-        self.inv = pinv(nmos_width=drc["minwidth_tx"])
+        self.inv = pinv(nmos_width=drc["minwidth_tx"],
+                        route_output=False)
         self.add_mod(self.inv)
 
-        # We don't want the pinv output to connect to the adjacent stage,
-        # so we space the inverters by M1 separation
-        self.inv_spaced_width = self.inv.width + drc["metal1_to_metal1"]
-        
         # half chain length is the width of the layout 
         # invs are stacked into 2 levels so input/output are close        
-        self.width = self.num_top_half * self.inv_spaced_width
+        self.width = self.num_top_half * self.inv.width
         self.height = 2 * self.inv.height
 
         self.add_inv_list()
@@ -85,13 +82,13 @@ class logic_effort_dc(design.design):
             # First place the gates
             if i < self.num_top_half:
                 # add top level that is upside down
-                inv_offset = vector(i * self.inv_spaced_width, 2 * self.inv.height)
+                inv_offset = vector(i * self.inv.width, 2 * self.inv.height)
                 inv_mirror="MX"
                 via_offset = inv_offset + a_pin.ll().scale(1,-1)
                 m1m2_via_rotate=270
             else:
                 # add bottom level from right to left
-                inv_offset = vector((self.num_inverters - i) * self.inv_spaced_width, 0)
+                inv_offset = vector((self.num_inverters - i) * self.inv.width, 0)
                 inv_mirror="MY"
                 via_offset = inv_offset + a_pin.ll().scale(-1,1)
                 m1m2_via_rotate=90
@@ -164,7 +161,7 @@ class logic_effort_dc(design.design):
 
             # We need a wire if the routing spans multiple rows
             if start_inv < self.num_top_half and end_inv >= self.num_top_half:
-                mid = vector(self.num_top_half * self.inv_spaced_width - 0.5 * drc["minwidth_metal2"],
+                mid = vector(self.num_top_half * self.inv.width - 0.5 * drc["minwidth_metal2"],
                              M2_start[1])
                 self.add_wire(("metal2", "via2", "metal3"),
                               [M2_start, mid, M2_end])
