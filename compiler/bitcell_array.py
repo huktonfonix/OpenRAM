@@ -13,8 +13,8 @@ class bitcell_array(design.design):
     Connects the word lines and bit lines.
     """
 
-    def __init__(self, cols, rows):
-        design.design.__init__(self, "bitcell_array")
+    def __init__(self, cols, rows, name="bitcell_array"):
+        design.design.__init__(self, name)
         debug.info(1, "Creating {0} {1} x {2}".format(self.name, rows, cols))
 
 
@@ -23,7 +23,6 @@ class bitcell_array(design.design):
 
         c = reload(__import__(OPTS.config.bitcell))
         self.mod_bitcell = getattr(c, OPTS.config.bitcell)
-
         self.cell = self.mod_bitcell()
         self.add_mod(self.cell)
 

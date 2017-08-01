@@ -22,7 +22,7 @@ class control_logic(design.design):
     def __init__(self, num_rows):
         """ Constructor """
         design.design.__init__(self, "control_logic")
-        debug.info(1, "Creating %s" % self.name)
+        debug.info(1, "Creating {}".format(self.name))
 
         self.num_rows = num_rows
         self.create_layout()
@@ -41,13 +41,13 @@ class control_logic(design.design):
 
         c = reload(__import__(OPTS.config.ms_flop))
         self.mod_ms_flop = getattr(c, OPTS.config.ms_flop)
-        self.ms_flop = self.mod_ms_flop("ms_flop")
+        self.ms_flop = self.mod_ms_flop()
         self.add_mod(self.ms_flop)
 
         self.nand2 = nand_2()
         self.add_mod(self.nand2)
-        self.NAND3 = nand_3()
-        self.add_mod(self.NAND3)
+        self.nand3 = nand_3()
+        self.add_mod(self.nand3)
 
         # Special gates: 4x Inverter
         self.inv1 = pinv(nmos_width=drc["minwidth_tx"])
@@ -67,8 +67,7 @@ class control_logic(design.design):
                                          word_size=3)
         self.add_mod(self.msf_control)
 
-        self.replica_bitline = replica_bitline(name="replica_bitline",
-                                               rows=int(math.ceil(self.num_rows / 10.0)))
+        self.replica_bitline = replica_bitline(rows=int(math.ceil(self.num_rows / 10.0)))
         self.add_mod(self.replica_bitline)
 
     def add_pin_labels(self):
@@ -110,7 +109,7 @@ class control_logic(design.design):
         self.gap_between_rail_offset = self.gap_between_rails + drc["minwidth_metal2"]
         self.via_shift = (m1m2_via.second_layer_width - m1m2_via.first_layer_width) / 2
 
-        # used to shift contact when connecting to NAND3 C pin down
+        # used to shift contact when connecting to nand3 C pin down
         self.contact_shift = (m1m2_via.first_layer_width - m1m2_via.contact_width) / 2
 
         # Common parameters for rails
@@ -265,7 +264,7 @@ class control_logic(design.design):
         self.set_nand2_nor2_pin("nand2",[1,1])
 
         # REPLICA BITLINE
-        base_x = self.nand_array_position.x + self.NAND3.width + 3 * self.inv1.width
+        base_x = self.nand_array_position.x + self.nand3.width + 3 * self.inv1.width
         total_rail_gap = self.rail_offset_gap + self.overall_rail_2_gap
         x_off = base_x + total_rail_gap + self.replica_bitline_gap
         self.offset_replica_bitline = vector(x_off, y_off)
@@ -304,8 +303,8 @@ class control_logic(design.design):
     def add_2nd_row(self, y_off):
         # Nand3_1 input: OE, clk_bar,CS output: rblk_bar
         self.offset_nand3_1 = vector(self.nand_array_position.x, y_off)
-        self.add_inst(name="NAND3_rblk_bar",
-                      mod=self.NAND3,
+        self.add_inst(name="nand3_rblk_bar",
+                      mod=self.nand3,
                       offset=self.offset_nand3_1,
                       mirror="MX")
         self.connect_inst(["clk_bar", "OE", "CS", "rblk_bar", "vdd", "gnd"])
@@ -314,8 +313,8 @@ class control_logic(design.design):
 
         # Nand3_2 input: WE, clk_bar,CS output: w_en_bar
         self.offset_nand3_2 = vector(self.nand_array_position.x, y_off)
-        self.add_inst(name="NAND3_w_en_bar",
-                      mod=self.NAND3,
+        self.add_inst(name="nand3_w_en_bar",
+                      mod=self.nand3,
                       offset=self.offset_nand3_2,
                       mirror="RO")
         self.connect_inst(["clk_bar", "WE", "CS", "w_en_bar", "vdd", "gnd"])
@@ -323,7 +322,7 @@ class control_logic(design.design):
         self.set_Nand3_pins(nand_name = "nand3_2",nand_scale = [0,1])
 
         # connect nand2 and nand3 to inv
-        nand3_to_inv_connection_height = self.NAND3.Z_position.y- self.inv1.A_position.y+ drc["minwidth_metal1"]
+        nand3_to_inv_connection_height = self.nand3.Z_position.y- self.inv1.A_position.y+ drc["minwidth_metal1"]
         self.add_rect(layer="metal1",
                       offset=self.nand3_1_Z_position,
                       width=drc["minwidth_metal1"],
@@ -334,7 +333,7 @@ class control_logic(design.design):
                       height=-nand3_to_inv_connection_height)
 
         # inv_2 input: rblk_bar, output: rblk
-        x_off = self.nand_array_position.x + self.NAND3.width
+        x_off = self.nand_array_position.x + self.nand3.width
         self.offset_inv2 = vector(x_off, y_off)
         self.add_inst(name="inv_rblk",
                       mod=self.inv1,
@@ -355,7 +354,7 @@ class control_logic(design.design):
         self.set_inv2345_pins(inv_name="inv3", inv_scale=[1, 1])
 
         # BUFFER INVERTERS FOR W_EN
-        x_off = self.nand_array_position.x + self.NAND3.width + self.inv1.width
+        x_off = self.nand_array_position.x + self.nand3.width + self.inv1.width
         self.offset_inv6 = vector(x_off, y_off)
         self.add_inst(name="inv_w_en1",
                       mod=self.inv1,
@@ -363,7 +362,7 @@ class control_logic(design.design):
                       mirror="RO")
         self.connect_inst(["pre_w_en", "pre_w_en1",  "vdd", "gnd"])
 
-        x_off = self.nand_array_position.x + self.NAND3.width + 2 * self.inv1.width
+        x_off = self.nand_array_position.x + self.nand3.width + 2 * self.inv1.width
         self.offset_inv7 = [x_off,  y_off]
         self.add_inst(name="inv_w_en2",
                       mod=self.inv1,
@@ -388,13 +387,13 @@ class control_logic(design.design):
         base = getattr(self, "offset_"+nand_name)
         extra = vector(0, drc["minwidth_metal1"]* (1 - nand_scale[1]) *0.5) 
         off1 = base - extra
-        off2 = base - extra + vector(self.NAND3.width, 0)
+        off2 = base - extra + vector(self.nand3.width, 0)
         self.set_Nand3_pins_sub(nand_name,["A","B","C"],off1,[0,nand_scale[1]])
         self.set_Nand3_pins_sub(nand_name,["Z","vdd","gnd"],off2,[0,nand_scale[1]])
 
     def set_Nand3_pins_sub(self,nand_name,pin_lst,base,nand_scale):
         for pin in pin_lst:
-            pin_xy = getattr(self.NAND3, pin+"_position").scale(0,nand_scale[1])
+            pin_xy = getattr(self.nand3, pin+"_position").scale(0,nand_scale[1])
             setattr(self, nand_name+"_"+pin+"_position", base + pin_xy)
 
     def set_inv2345_pins(self,inv_name,inv_scale):
@@ -423,7 +422,7 @@ class control_logic(design.design):
                           height=self.logic_height)
             self.rail_1_x_offsets.append(offset.x)
 
-        rail2_start_x = (self.nand_array_position.x + self.NAND3.width 
+        rail2_start_x = (self.nand_array_position.x + self.nand3.width 
                              + 3 * self.inv1.width + self.rail_offset_gap)
         for i in range(self.num_rails_2):
             offset = vector(rail2_start_x + i * self.rail_offset_gap,

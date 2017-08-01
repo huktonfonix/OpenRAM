@@ -119,6 +119,7 @@ class layout:
         """Adds an instance of a mod to this module"""
         self.insts.append(geometry.instance(name, mod, offset, mirror, rotate))
         debug.info(4, "adding instance" + ",".join(x.name for x in self.insts))
+        return self.insts[-1]
 
     def add_rect(self, layer, offset, width, height):
         """Adds a rectangle on a given layer,offset with width and height"""

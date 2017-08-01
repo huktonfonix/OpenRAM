@@ -11,8 +11,7 @@ class tri_gate_array(design.design):
 
     def __init__(self, columns, word_size):
         """Intial function of tri gate array """
-        name = "tri_gate_array"
-        design.design.__init__(self, name)
+        design.design.__init__(self, "tri_gate_array")
         debug.info(1, "Creating {0}".format(self.name))
 
         c = reload(__import__(OPTS.config.tri_gate))

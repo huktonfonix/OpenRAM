@@ -26,8 +26,7 @@ class logic_effort_dc_test(unittest.TestCase):
         import logic_effort_dc
 
         debug.info(2, "Testing delay_chain")
-        a = logic_effort_dc.logic_effort_dc(
-            "chain", stage_list=[4, 4, 4, 4, 4])
+        a = logic_effort_dc.logic_effort_dc(fanout_list=[4, 4, 4, 4])
         OPTS.check_lvsdrc = True
         self.local_check(a)
 

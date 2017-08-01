@@ -15,8 +15,8 @@ class bitcell(design.design):
     (width,height) = utils.get_libcell_size("cell_6t", GDS["unit"], layer["boundary"])
     pin_map = utils.get_libcell_pins(pin_names, "cell_6t", GDS["unit"], layer["boundary"])
 
-    def __init__(self, name="cell_6t"):
-        design.design.__init__(self, name)
+    def __init__(self):
+        design.design.__init__(self, "cell_6t")
         debug.info(2, "Create bitcell object")
 
         self.width = bitcell.width

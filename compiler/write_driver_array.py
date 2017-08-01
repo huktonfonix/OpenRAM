@@ -12,8 +12,7 @@ class write_driver_array(design.design):
     """
 
     def __init__(self, columns, word_size):
-        name = "write_driver_array"
-        design.design.__init__(self, name)
+        design.design.__init__(self, "write_driver_array")
         debug.info(1, "Creating {0}".format(self.name))
 
         c = reload(__import__(OPTS.config.write_driver))

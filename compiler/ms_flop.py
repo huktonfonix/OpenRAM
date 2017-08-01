@@ -14,7 +14,7 @@ class ms_flop(design.design):
     (width,height) = utils.get_libcell_size("ms_flop", GDS["unit"], layer["boundary"])
     pin_map = utils.get_libcell_pins(pin_names, "ms_flop", GDS["unit"], layer["boundary"])
     
-    def __init__(self, name):
+    def __init__(self, name="ms_flop"):
         design.design.__init__(self, name)
 
         self.width = ms_flop.width

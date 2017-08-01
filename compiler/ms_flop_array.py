@@ -18,7 +18,7 @@ class ms_flop_array(design.design):
         if name=="":
             name = "flop_array_c{0}_w{1}".format(columns,word_size)
         design.design.__init__(self, name)
-        debug.info(1, "Creating %s".format(self.name))
+        debug.info(1, "Creating {}".format(self.name))
 
         c = reload(__import__(OPTS.config.ms_flop))
         self.mod_ms_flop = getattr(c, OPTS.config.ms_flop)

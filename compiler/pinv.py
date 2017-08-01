@@ -310,18 +310,12 @@ class pinv(design.design):
                         + self.nmos.active_contact.second_layer_width, 
                         self.input_position.y)
         output_length = self.width - offset.x
-        if self.route_output == True:
-            self.output_position = offset + vector(output_length,0)
-            self.add_layout_pin(text="Z",
-                                layer="metal1",
-                                offset=offset,
-                                width=output_length,
-                                height=drc["minwidth_metal1"])
-        else:
-            self.output_position = offset
-            self.add_label(text="Z",
-                           layer="metal1",
-                           offset=offset)
+        self.output_position = offset + vector(output_length,0)
+        self.add_layout_pin(text="Z",
+                            layer="metal1",
+                            offset=offset,
+                            width=output_length,
+                            height=drc["minwidth_metal1"])
 
     def add_well_contacts(self):
         """Adds n/p well taps to the layout"""

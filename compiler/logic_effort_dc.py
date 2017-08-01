@@ -12,162 +12,160 @@ class logic_effort_dc(design.design):
     Input is a list contains the electrical effort of each stage.
     """
 
-    def __init__(self, name, stage_list):
+    def __init__(self, fanout_list, name="delay_chain"):
         """init function"""
-        design.design.__init__(self, "delay_chain")
-        #fix me: input should be logic effort value 
+        design.design.__init__(self, name)
+        # FIXME: input should be logic effort value 
         # and there should be functions to get 
-        # area effecient inverter stage list 
+        # area efficient inverter stage list 
 
-        # chain_length is number of inverters in the load
-        # plus 1 for the input
-        chain_length = 1 + sum(stage_list)
-        # half chain length is the width of the layeout 
-        # invs are stacked into 2 levels so input/output are close
-        half_length = round(chain_length / 2.0)
-
+        # number of inverters including any fanout loads.
+        self.fanout_list = fanout_list
+        self.num_inverters = 1 + sum(fanout_list)
+        self.num_top_half = round(self.num_inverters / 2.0)
+        
         c = reload(__import__(OPTS.config.bitcell))
         self.mod_bitcell = getattr(c, OPTS.config.bitcell)
-        self.bitcell_height = self.mod_bitcell.chars["height"]
+        self.bitcell = self.mod_bitcell()
 
         self.add_pins()
         self.create_module()
-        self.cal_cell_size(half_length)
-        self.create_inv_stage_lst(stage_list)
-        self.add_inv_lst(chain_length)
-        self.route_inv(stage_list)
-        self.add_vddgnd_label()
+        self.route_inv()
+        self.add_supply_rails()
         self.DRC_LVS()
 
     def add_pins(self):
-        """add the pins of the delay chain"""
+        """ Add the pins of the delay chain"""
         self.add_pin("clk_in")
         self.add_pin("clk_out")
         self.add_pin("vdd")
         self.add_pin("gnd")
 
-    def cal_cell_size(self, half_length):
-        """ calculate the width and height of the cell"""
-        self.width = half_length * self.inv.width
-        self.height = 2 * self.bitcell_height
-
     def create_module(self):
-        """add the inverters"""
-        self.inv = pinv(nmos_width=drc["minwidth_tx"],
-                        route_output=False)
+        """ Add the inverter logical module """
+
+        self.create_inv_list()
+
+        self.inv = pinv(nmos_width=drc["minwidth_tx"])
         self.add_mod(self.inv)
 
+        # We don't want the pinv output to connect to the adjacent stage,
+        # so we space the inverters by M1 separation
+        self.inv_spaced_width = self.inv.width + drc["metal1_to_metal1"]
+        
+        # half chain length is the width of the layout 
+        # invs are stacked into 2 levels so input/output are close        
+        self.width = self.num_top_half * self.inv_spaced_width
+        self.height = 2 * self.inv.height
 
-    def create_inv_stage_lst(self, stage_list):
-        """ Generate a list to indicate what stage each inv is in """
-        self.inv_stage_lst = [[0, True]]
-        stage_num = 0
-        for stage in stage_list:
-            stage_num = stage_num + 1
-            repeat_times = stage
-            for i in range(repeat_times):
-                if i == repeat_times - 1:
-                    # the first one need to connected to the next stage
-                    self.inv_stage_lst.append([stage_num, True])
-                else:
-                    # the rest should not drive any thing
-                    self.inv_stage_lst.append([stage_num, False])
+        self.add_inv_list()
+        
+    def create_inv_list(self):
+        """ 
+        Generate a list of inverters. Each inverter has a stage
+        number and a flag indicating if it is a dummy load. This is 
+        the order that they will get placed too.
+        """
+        # First stage is always 0 and is not a dummy load
+        self.inv_list=[[0,False]]
+        for stage_num,fanout_size in zip(range(len(self.fanout_list)),self.fanout_list):
+            for i in range(fanout_size-1):
+                # Add the dummy loads
+                self.inv_list.append([stage_num+1, True])
+                
+            # Add the gate to drive the next stage
+            self.inv_list.append([stage_num+1, False])
 
-    def add_inv_lst(self, chain_length):
+    def add_inv_list(self):
         """add the inverter and connect them based on the stage list """
-        half_length = round(chain_length / 2.0)
-        self.inv_positions = []
-        for i in range(chain_length):
-            if i < half_length:
-                # add top level
-                inv_offset = [i * self.inv.width,
-                              2 * self.inv.height]
+        a_pin = self.inv.get_pin("A")
+        dummy_load_counter = 1
+        self.inv_inst_list = []
+        for i in range(self.num_inverters):
+            # First place the gates
+            if i < self.num_top_half:
+                # add top level that is upside down
+                inv_offset = vector(i * self.inv_spaced_width, 2 * self.inv.height)
                 inv_mirror="MX"
-                self.inv_positions.append(inv_offset)
-                offset = inv_offset + \
-                         self.inv.input_position.scale(1,-1)
+                via_offset = inv_offset + a_pin.ll().scale(1,-1)
                 m1m2_via_rotate=270
-                if i == 0:
-                    self.clk_in_offset = offset
             else:
-                # add bottom level
-                inv_offset = [(chain_length - i) * self.inv.width,
-                              0]
+                # add bottom level from right to left
+                inv_offset = vector((self.num_inverters - i) * self.inv_spaced_width, 0)
                 inv_mirror="MY"
-                self.inv_positions.append(inv_offset)
-                offset = inv_offset + \
-                         self.inv.input_position.scale(-1,1)
+                via_offset = inv_offset + a_pin.ll().scale(-1,1)
                 m1m2_via_rotate=90
-                if i == chain_length - 1:
-                    self.clk_out_offset = inv_offset + \
-                                          self.inv.output_position.scale(-1,1)
+
             self.add_via(layers=("metal1", "via1", "metal2"),
-                         offset=offset,
+                         offset=via_offset,
                          rotate=m1m2_via_rotate)
-            self.add_inst(name="inv_chain%d" % i,
-                          mod=self.inv,
-                          offset=inv_offset,
-                          mirror=inv_mirror)
+            cur_inv=self.add_inst(name="dinv{}".format(i),
+                                  mod=self.inv,
+                                  offset=inv_offset,
+                                  mirror=inv_mirror)
+            # keep track of the inverter instances so we can use them to get the pins
+            self.inv_inst_list.append(cur_inv)
 
-            # connecting spice
+            # Second connect them logically
+            cur_stage = self.inv_list[i][0]
+            next_stage = self.inv_list[i][0]+1
             if i == 0:
-                self.connect_inst(args=["clk_in", "s" + str(self.inv_stage_lst[i][0] + 1),
-                                   "vdd", "gnd"],
-                                  check=False)
-                spare_node_counter = 1
-            elif i == chain_length - 1:
-                self.connect_inst(args=["s" + str(self.inv_stage_lst[i][0]), "clk_out", "vdd", "gnd"],
-                                  check=False)
+                input = "clk_in"
             else:
-                if self.inv_stage_lst[i][1] == True:
-                    self.connect_inst(args=["s" + str(self.inv_stage_lst[i][0]),
-                                            "s" + str(self.inv_stage_lst[i][0] + 1), "vdd", "gnd"],
-                                      check=False)
-                    spare_node_counter = 1
-                else:
-                    self.connect_inst(args=["s" + str(self.inv_stage_lst[i][0]), "s" \
-                                                + str(self.inv_stage_lst[i][0] + 1) + "n" \
-                                                + str(spare_node_counter), "vdd", "gnd"],
-                                      check=False)
-                    spare_node_counter += 1
+                input = "s{}".format(cur_stage)
+            if i == self.num_inverters-1:
+                output = "clk_out"
+            else:                
+                output = "s{}".format(next_stage)
 
-    def route_inv(self, stage_list):
+            # if the gate is a dummy load don't connect the output
+            # else reset the counter
+            if self.inv_list[i][1]: 
+                output = output+"n{0}".format(dummy_load_counter)
+                dummy_load_counter += 1
+            else:
+                dummy_load_counter = 1
+                    
+            self.connect_inst(args=[input, output, "vdd", "gnd"])
+
+
+
+    def route_inv(self):
         """add metal routing based on the stage list """
-        half_length = round((sum(stage_list) + 1) / 2.0)
         start_inv = end_inv = 0
-        for stage in stage_list:
+        z_pin = self.inv.get_pin("Z")
+        a_pin = self.inv.get_pin("A")
+        for fanout in self.fanout_list:
             # end inv number depends on the fan out number
-            end_inv = start_inv + stage
-            start_inv_offset = self.inv_positions[start_inv]
-            end_inv_offset = self.inv_positions[end_inv]
-
-            if start_inv < half_length:
-                start_o_offset =  start_inv_offset + \
-                                  self.inv.output_position.scale(1,-1)
-                m1m2_via_rotate =270
-                m1m2_via_vc = vector(1,-.5)
+            end_inv = start_inv + fanout
+            start_inv_offset = self.inv_inst_list[start_inv].offset
+            end_inv_offset = self.inv_inst_list[end_inv].offset
+            if start_inv < self.num_top_half:
+                start_o_offset =  start_inv_offset + z_pin.ll().scale(1,-1)
+                m1m2_via_rotate = 270
+                y_dir = -1
             else:
-                start_o_offset = start_inv_offset + \
-                                 self.inv.output_position.scale(-1,1)
-                m1m2_via_rotate =90
-                m1m2_via_vc = vector(1,.5)
-            M2_start = start_o_offset + vector(0,drc["minwidth_metal2"]).scale(m1m2_via_vc)
+                start_o_offset = start_inv_offset + z_pin.ll().scale(-1,1)
+                m1m2_via_rotate = 90
+                y_dir = 1
+
+            M2_start = start_o_offset + vector(0,drc["minwidth_metal2"]).scale(1,y_dir*0.5)
+            
             self.add_via(layers=("metal1", "via1", "metal2"),
                          offset=start_o_offset,
                          rotate=m1m2_via_rotate)
 
-            if end_inv < half_length:
-                end_i_offset =  end_inv_offset + \
-                                self.inv.input_position.scale(1,-1)
+            if end_inv < self.num_top_half:
+                end_i_offset =  end_inv_offset + a_pin.ll().scale(1,-1)
                 M2_end = end_i_offset - vector(0, 0.5 * drc["minwidth_metal2"])
             else:
-                end_i_offset =  end_inv_offset + \
-                                self.inv.input_position.scale(-1,1)
+                end_i_offset =  end_inv_offset + a_pin.ll().scale(-1,1)
                 M2_end = end_i_offset + vector(0, 0.5 * drc["minwidth_metal2"])
 
-            if start_inv < half_length and end_inv >= half_length:
-                mid = [half_length * self.inv.width \
-                       - 0.5 * drc["minwidth_metal2"], M2_start[1]]
+            # We need a wire if the routing spans multiple rows
+            if start_inv < self.num_top_half and end_inv >= self.num_top_half:
+                mid = vector(self.num_top_half * self.inv_spaced_width - 0.5 * drc["minwidth_metal2"],
+                             M2_start[1])
                 self.add_wire(("metal2", "via2", "metal3"),
                               [M2_start, mid, M2_end])
             else:
@@ -175,14 +173,22 @@ class logic_effort_dc(design.design):
             # set the start of next one after current end
             start_inv = end_inv
 
-    def add_vddgnd_label(self):
-        """add vdd and gnd labels"""
+    def add_supply_rails(self):
+        """ Add vdd and gnd rails """
+        vdd_pin = self.inv.get_pin("vdd")
+        gnd_pin = self.inv.get_pin("gnd")
         for i in range(3):
+            (offset,y_dir)=self.get_gate_offset(0, self.inv.height, i)
             if i % 2:
-                self.add_label(text="vdd",
-                               layer="metal1",
-                               offset=[0, i * self.bitcell_height])
+                self.add_layout_pin(text="vdd",
+                                    layer="metal1",
+                                    offset=offset + vdd_pin.ll().scale(1,y_dir),
+                                    width=self.width,
+                                    height=drc["minwidth_metal1"])
             else:
-                self.add_label(text="gnd",
-                               layer="metal1",
-                               offset=[0, i * self.bitcell_height])
+                self.add_layout_pin(text="gnd",
+                                    layer="metal1",
+                                    offset=offset + gnd_pin.ll().scale(1,y_dir),
+                                    width=self.width,
+                                    height=drc["minwidth_metal1"])
+

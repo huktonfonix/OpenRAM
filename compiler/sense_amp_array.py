@@ -11,8 +11,7 @@ class sense_amp_array(design.design):
     """
 
     def __init__(self, word_size, words_per_row):
-        name = "sense_amp__array"
-        design.design.__init__(self, name)
+        design.design.__init__(self, "sense_amp_array")
         debug.info(1, "Creating {0}".format(self.name))
 
         c = reload(__import__(OPTS.config.sense_amp))

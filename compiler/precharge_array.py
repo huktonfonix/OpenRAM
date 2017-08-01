@@ -12,8 +12,7 @@ class precharge_array(design.design):
     """
 
     def __init__(self, columns, ptx_width, beta=2):
-        name="precharge_array"        
-        design.design.__init__(self, name)
+        design.design.__init__(self, "precharge_array")
         debug.info(1, "Creating {0}".format(name))
 
         self.columns = columns

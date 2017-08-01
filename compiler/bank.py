@@ -21,21 +21,17 @@ class bank(design.design):
 
         mod_list = ["tri_gate", "bitcell", "decoder", "ms_flop_array", "wordline_driver",
                     "bitcell_array",   "sense_amp_array",    "precharge_array",
-                    "column_mux_array","write_driver_array", "tri_gate_array"]
+                    "column_mux_array", "write_driver_array", "tri_gate_array"]
         for mod_name in mod_list:
             config_mod_name = getattr(OPTS.config, mod_name)
             class_file = reload(__import__(config_mod_name))
             mod_class = getattr(class_file , config_mod_name)
             setattr (self, "mod_"+mod_name, mod_class)
 
-        self.bitcell_height = self.mod_bitcell.height
-
         if name == "":
-            self.name = "bank_{0}_{1}".format(word_size, num_words)
-        else:
-            self.name = name
-        design.design.__init__(self, self.name)
-        debug.info(2, "create sram of size {0} with {1} num of words".format(word_size,num_words))
+            name = "bank_{0}_{1}".format(word_size, num_words)
+        design.design.__init__(self, name)
+        debug.info(2, "create sram of size {0} with {1} words".format(word_size,num_words))
 
         self.word_size = word_size
         self.num_words = num_words
@@ -58,21 +54,19 @@ class bank(design.design):
         for i in range(self.addr_size):
             self.add_pin("ADDR[{0}]".format(i))
 
+        # For more than one bank, we have a bank select and name
+        # the signals gated_*
         if(self.num_banks > 1):
             self.add_pin("bank_select")
-            self.add_pin("gated_s_en")
-            self.add_pin("gated_w_en")
-            self.add_pin("gated_tri_en_bar")
-            self.add_pin("gated_tri_en")
-            self.add_pin("gated_clk_bar")
-            self.add_pin("gated_clk")
+            prefix = "gated_"
         else:
-            self.add_pin("s_en")
-            self.add_pin("w_en")
-            self.add_pin("tri_en_bar")
-            self.add_pin("tri_en")
-            self.add_pin("clk_bar")
-            self.add_pin("clk")
+            prefix = ""
+        self.add_pin(prefix+"s_en")
+        self.add_pin(prefix+"w_en")
+        self.add_pin(prefix+"tri_en_bar")
+        self.add_pin(prefix+"tri_en")
+        self.add_pin(prefix+"clk_bar")
+        self.add_pin(prefix+"clk")
         self.add_pin("vdd")
         self.add_pin("gnd")
 
@@ -173,6 +167,9 @@ class bank(design.design):
 
     def create_modules(self):
         """ Create all the modules using the class loader """
+        self.tri = self.mod_tri_gate()
+        self.bitcell = self.mod_bitcell()
+        
         self.bitcell_array = self.mod_bitcell_array(cols=self.num_cols,
                                                     rows=self.num_rows)
         self.add_mod(self.bitcell_array)
@@ -498,7 +495,7 @@ class bank(design.design):
         if(self.num_banks > 1):
             # update the min_point
             self.min_point = (self.min_point - 3*drc["minwidth_metal1"]
-                                  - self.number_of_control_lines * self.bitcell_height)
+                                  - self.number_of_control_lines * self.bitcell.height)
             xoffset_nor = (- self.start_of_left_central_bus - self.NOR2.width
                                - self.inv4x.width)
             xoffset_inv = xoffset_nor + self.NOR2.width
@@ -999,10 +996,10 @@ class bank(design.design):
                               + self.msf_data_in.clk_positions[0]
                               - vector(0, 0.5 * drc["minwidth_metal1"]))
         right_side.append(self.tri_gate_array_offset
-                              + vector(1,-1).scale(self.tri_gate_chars["en_bar"])
+                              + self.tri_gate.get_pin("en_bar").ll().scale(1,-1)
                               - vector(0, 0.5 * drc["minwidth_metal1"]))
         right_side.append(self.tri_gate_array_offset
-                              + vector(1,-1).scale(self.tri_gate_chars["en"])
+                              + self.tri_gate.get_pin("en").ll().scale(1,-1)
                               - vector(0, 0.5 * drc["minwidth_metal1"]))
         right_side.append(self.precharge_array_position
                               + self.precharge_array.pclk_position)
