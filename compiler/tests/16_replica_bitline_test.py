@@ -27,7 +27,7 @@ class replica_bitline_test(unittest.TestCase):
         import replica_bitline
 
         debug.info(2, "Testing RBL")
-        a = replica_bitline.replica_bitline("chain", 13)
+        a = replica_bitline.replica_bitline(13)
         OPTS.check_lvsdrc = True
         self.local_check(a)
 

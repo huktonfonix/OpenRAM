@@ -31,13 +31,13 @@ class logic_effort_dc(design.design):
         self.add_pins()
         self.create_module()
         self.route_inv()
-        self.add_supply_rails()
+        self.add_layout_pins()
         self.DRC_LVS()
 
     def add_pins(self):
         """ Add the pins of the delay chain"""
-        self.add_pin("clk_in")
-        self.add_pin("clk_out")
+        self.add_pin("in")
+        self.add_pin("out")
         self.add_pin("vdd")
         self.add_pin("gnd")
 
@@ -107,11 +107,11 @@ class logic_effort_dc(design.design):
             cur_stage = self.inv_list[i][0]
             next_stage = self.inv_list[i][0]+1
             if i == 0:
-                input = "clk_in"
+                input = "in"
             else:
                 input = "s{}".format(cur_stage)
             if i == self.num_inverters-1:
-                output = "clk_out"
+                output = "out"
             else:                
                 output = "s{}".format(next_stage)
 
@@ -170,8 +170,8 @@ class logic_effort_dc(design.design):
             # set the start of next one after current end
             start_inv = end_inv
 
-    def add_supply_rails(self):
-        """ Add vdd and gnd rails """
+    def add_layout_pins(self):
+        """ Add vdd and gnd rails and the input/output """
         vdd_pin = self.inv.get_pin("vdd")
         gnd_pin = self.inv.get_pin("gnd")
         for i in range(3):
@@ -189,3 +189,20 @@ class logic_effort_dc(design.design):
                                     width=self.width,
                                     height=drc["minwidth_metal1"])
 
+            # input is A pin of first inverter
+            a_pin = self.inv.get_pin("A")
+            first_offset = self.inv_inst_list[0].offset
+            self.add_layout_pin(text="in",
+                                layer="metal1",
+                                offset=first_offset+a_pin.ll().scale(1,-1) - vector(0,drc["minwidth_metal1"]))
+
+                                
+
+            # output is Z pin of last inverter
+            z_pin = self.inv.get_pin("Z")
+            self.add_layout_pin(text="out",
+                                layer="metal1",
+                                offset=z_pin.ll().scale(0,1),
+                                width=self.inv.width-z_pin.lx(),
+                                height=drc["minwidth_metal1"])
+            

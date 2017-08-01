@@ -16,8 +16,8 @@ class replica_bitline(design.design):
     Used for memory timing control
     """
 
-    def __init__(self, rows):
-        design.design.__init__(self, "replica_bitline")
+    def __init__(self, rows, name="replica_bitline"):
+        design.design.__init__(self, name)
 
         g = reload(__import__(OPTS.config.delay_chain))
         self.mod_delay_chain = getattr(g, OPTS.config.delay_chain)
@@ -83,11 +83,13 @@ class replica_bitline(design.design):
         """ Create modules for later instantiation """
         self.replica_bitcell = self.mod_replica_bitcell()
         self.add_mod(self.replica_bitcell)
+        # These are the same for dimensions...
+        self.bitcell = self.replica_bitcell
 
         # This is the replica bitline load column that is the height of our array
         self.bitline_load = bitcell_array(name="bitline_load", cols=1, rows=self.rows)
         self.add_mod(self.bitline_load)
-
+        
         self.delay_chain = self.mod_delay_chain([1, 1, 1])
         self.add_mod(self.delay_chain)
 
@@ -159,25 +161,17 @@ class replica_bitline(design.design):
 
     def route(self):
         """connect modules together"""
+        a_pin = self.inv.get_pin("A")
+        z_pin = self.inv.get_pin("Z")
         # calculate pin offset
-        correct = vector(0, 0.5 * drc["minwidth_metal1"])
-        self.out_offset = self.rbl_inv_offset + self.inv.Z_position + correct
+        out_offset = self.rbl_inv_offset + z_pin.ll()
         self.add_via(layers=("metal1", "via1", "metal2"),
-                     offset=self.out_offset)
-        m1_pin_offset = self.out_offset - correct
-        self.add_rect(layer="metal1",
-                      offset=m1_pin_offset,
-                      width=self.m1m2_via.width,
-                      height=self.m1m2_via.height)
-        self.add_rect(layer="metal2",
-                      offset=m1_pin_offset,
-                      width=self.m2m3_via.width,
-                      height=self.m2m3_via.height)
+                     offset=out_offset)
 
-        rbl_inv_in = self.rbl_inv_offset + self.inv.A_position + correct
+        rbl_inv_in = self.rbl_inv_offset + a_pin.ll()
         rbl_offset = self.replica_bitline_offset + self.bitcell.get_pin("BL").ll().scale(1,0)
-        pin_offset = self.delay_chain.clk_out_offset.rotate_scale(-1,1)
-        delay_chain_output = self.delay_chain_offset + pin_offset
+        clk_out_pin = self.delay_chain.get_pin("out")
+        delay_chain_output = self.delay_chain_offset + clk_out_pin.ll().rotate_scale(-1,1)
         vdd_offset = vector(self.delay_chain_offset.x + 9 * drc["minwidth_metal2"], 
                             self.height)
         self.create_input()

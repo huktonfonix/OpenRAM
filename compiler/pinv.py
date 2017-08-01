@@ -318,7 +318,7 @@ class pinv(design.design):
                                 width=output_length,
                                 height=drc["minwidth_metal1"])
         else:
-            # This leaves the output as an internal pin
+            # This leaves the output as an internal pin (min sized)
             self.add_layout_pin(text="Z",
                                 layer="metal1",
                                 offset=offset)
