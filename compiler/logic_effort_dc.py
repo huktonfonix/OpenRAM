@@ -189,20 +189,20 @@ class logic_effort_dc(design.design):
                                     width=self.width,
                                     height=drc["minwidth_metal1"])
 
-            # input is A pin of first inverter
-            a_pin = self.inv.get_pin("A")
-            first_offset = self.inv_inst_list[0].offset
-            self.add_layout_pin(text="in",
-                                layer="metal1",
-                                offset=first_offset+a_pin.ll().scale(1,-1) - vector(0,drc["minwidth_metal1"]))
+        # input is A pin of first inverter
+        a_pin = self.inv.get_pin("A")
+        first_offset = self.inv_inst_list[0].offset
+        self.add_layout_pin(text="in",
+                            layer="metal1",
+                            offset=first_offset+a_pin.ll().scale(1,-1) - vector(0,drc["minwidth_metal1"]))
 
                                 
 
-            # output is Z pin of last inverter
-            z_pin = self.inv.get_pin("Z")
-            self.add_layout_pin(text="out",
-                                layer="metal1",
-                                offset=z_pin.ll().scale(0,1),
-                                width=self.inv.width-z_pin.lx(),
-                                height=drc["minwidth_metal1"])
+        # output is Z pin of last inverter
+        z_pin = self.inv.get_pin("Z")
+        self.add_layout_pin(text="out",
+                            layer="metal1",
+                            offset=z_pin.ll().scale(0,1),
+                            width=self.inv.width-z_pin.lx())
+
             

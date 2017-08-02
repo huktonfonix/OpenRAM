@@ -186,9 +186,8 @@ class replica_bitline(design.design):
 
     def create_input(self):
         # create routing module based on module offset
-        correct = vector(0.5 * drc["minwidth_metal1"], 0)
-        pin_offset = self.delay_chain.clk_in_offset.rotate_scale(-1,1)
-        input_offset = self.delay_chain_offset + pin_offset + correct
+        clk_in_pin = self.delay_chain.get_pin("in")
+        input_offset = self.delay_chain_offset + clk_in_pin.ll().rotate_scale(-1,1)
         mid1 = [input_offset.x, self.en_input_offset.y]
         self.add_path("metal1", [self.en_input_offset, mid1, input_offset])
 
@@ -360,39 +359,34 @@ class replica_bitline(design.design):
         self.add_via(layers=("metal1", "via1", "metal2"),
                      offset=vdd_offset,
                      mirror="MX")
-        gnd_offset = (self.delay_chain_offset 
-                          + vector([drc["minwidth_metal1"]] * 2).scale(-.5,.5))
+        gnd_offset = self.delay_chain_offset + vector([drc["minwidth_metal1"]]*2).scale(-0.5,0.5)
         for i in range(self.rows):
-            WL_offset = (self.replica_bitline_offset                         
-                             + self.bitline_load.WL_positions[i].scale(0,1))
-            mid = [self.delay_chain_offset.x  + 6 * drc["minwidth_metal2"],
-                   gnd_offset.y]
+            wl_offset = self.replica_bitline_offset + self.bitline_load.get_pin("wl[{}]".format(i)).ll().scale(0,1)
+            mid = vector(self.delay_chain_offset.x  + 6*drc["minwidth_metal2"], gnd_offset.y)
             self.add_wire(layers=("metal1", "via1", "metal2"), 
-                          coordinates=[gnd_offset, mid, WL_offset])
+                          coordinates=[gnd_offset, mid, wl_offset])
             if i % 2 == 0:
-                load_vdd_offset = (self.replica_bitline_offset
-                                       + self.bitline_load.vdd_positions[i])
-                mid = [vdd_offset.x, load_vdd_offset.y]
+                load_vdd_offset = self.replica_bitline_offset + self.bitline_load.get_pin("vdd")[0].ll()
+                mid = vector(vdd_offset.x, load_vdd_offset.y)
                 self.add_wire(layers=("metal1", "via1", "metal2"), 
                               coordinates=[vdd_offset, mid, load_vdd_offset])
 
     def route_RC(self,vdd_offset):
         """route vdd gnd to the replica cell """
         # connect vdd
-        RC_vdd = self.replica_bitline_offset + vector(1,-1).scale(self.bitcell_chars["vdd"])
-        mid = [vdd_offset.x, RC_vdd.y]
+        RC_vdd = self.replica_bitline_offset + self.bitcell.get_pin("vdd").ll().scale(1,-1)
+        mid = vector(vdd_offset.x, RC_vdd.y)
         # Note the inverted stacks
         self.add_wire(layers=("metal1", "via1", "metal2"), 
                       coordinates=[vdd_offset, mid, RC_vdd])
 
         gnd_offset = self.rbl_inv_offset - vector(self.inv.width, 0)
-        load_gnd = self.replica_bitline_offset + vector(self.bitcell_chars["gnd"][0], 
+        load_gnd = self.replica_bitline_offset + vector(self.bitcell.get_pin("gnd").lx(), 
                                                         self.bitline_load.height)
-        mid = [load_gnd.x, gnd_offset.y]
+        mid = vector(load_gnd.x, gnd_offset.y)
         self.add_wire(layers=("metal1", "via1", "metal2"), 
                       coordinates=[gnd_offset, mid, load_gnd])
 
-        load_gnd = self.replica_bitline_offset + vector(0, 
-                                                        self.bitline_load.height)
-        mid = [load_gnd.x, gnd_offset.y]
+        load_gnd = self.replica_bitline_offset + vector(0, self.bitline_load.height)
+        mid = vector(load_gnd.x, gnd_offset.y)
         self.add_wire(("metal1", "via1", "metal2"), [gnd_offset, mid, load_gnd])
