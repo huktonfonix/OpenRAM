@@ -53,7 +53,7 @@ class logic_effort_dc(design.design):
         # half chain length is the width of the layout 
         # invs are stacked into 2 levels so input/output are close
         # extra metal is for the gnd connection U
-        self.width = self.num_top_half * self.inv.width + 2*drc["metal1_to_metal1"] + drc["minwidth_metal1"]
+        self.width = self.num_top_half * self.inv.width + 2*drc["metal1_to_metal1"] + 0.5*drc["minwidth_metal1"]
         self.height = 2 * self.inv.height
 
         self.add_inv_list()
@@ -193,6 +193,7 @@ class logic_effort_dc(design.design):
                                     height=drc["minwidth_metal1"])
 
         # Use the right most parts of the gnd rails and add a U connector
+        # We still have the two gnd pins, but it is an either-or connect
         gnd_pins = self.get_pin("gnd")
         gnd_start = gnd_pins[0].rc()
         gnd_mid1 = gnd_start + vector(2*drc["metal1_to_metal1"],0)

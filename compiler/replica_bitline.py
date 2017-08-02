@@ -35,7 +35,7 @@ class replica_bitline(design.design):
         self.create_modules()
         self.calculate_module_offsets()
         self.add_modules()
-        #self.route()
+        self.route()
         #self.offset_all_coordinates()
 
         self.DRC_LVS()
@@ -134,6 +134,11 @@ class replica_bitline(design.design):
 
     def route(self):
         """connect modules together"""
+
+        self.route_gnd()
+        self.route_vdd()
+
+        return
         a_pin = self.inv.get_pin("A")
         z_pin = self.inv.get_pin("Z")
         # calculate pin offset
@@ -152,7 +157,6 @@ class replica_bitline(design.design):
         self.route_rbl_t_rbl_inv(rbl_offset, rbl_inv_in)
         self.route_access_tx(delay_chain_output, rbl_inv_in, vdd_offset)
         self.route_vdd()
-        self.route_gnd()
         # route loads after gnd and vdd created
         self.route_loads(vdd_offset)
         self.route_replica_cell(vdd_offset)
@@ -277,59 +281,68 @@ class replica_bitline(design.design):
         self.add_path("metal1", [source_offset, rbl_inv_in])
 
     def route_vdd(self):
-        """ Route the vdd connections together and add a layout pin """
-        vdd_offset = vector(0, self.height)
+        # Add a rail in M1 from bottom to two along delay chain
+        inv_vdd_offset = self.inv.get_pin("vdd").ll().rotate_scale(-1,1)
+        vdd_start = self.rbl_inv_offset.scale(1,0) + inv_vdd_offset
+        # It is the height of the entire RBL and bitcell
         self.add_layout_pin(text="vdd",
-                            layer="metal1",
-                            offset=vdd_offset,
-                            width=self.width,
-                            height=drc["minwidth_metal1"])
-        # delay chain vdd to vertical vdd  rail and
-        start = self.delay_chain_offset - vector(0.5 * self.delay_chain.height, 0)
-        m1rail_space = (drc["minwidth_metal1"] + drc["metal1_to_metal1"])
-        mid1 = start - vector(0, m1rail_space)
-        mid2 = vector(self.delay_chain_offset.x + 9 * drc["minwidth_metal2"],
-                      mid1.y)
-        end = [mid2.x, vdd_offset.y]
-        self.add_path(layer=("metal1"), 
-                      coordinates=[start, mid1, mid2])
-        self.add_wire(layers=("metal1", "via1", "metal2"), 
-                      coordinates=[mid1, mid2, end])
+                            layer="metal2",
+                            offset=vdd_start,
+                            width=-drc["minwidth_metal2"],
+                            height=self.rbl.height+self.bitcell.height+self.inv.width)
 
-        # add layout pin
-        
+        # Connect the vdd pins directly to vdd
+        vdd_pins = self.rbl.get_pin("vdd")
+        for pin in vdd_pins:
+            offset = vector(vdd_start.x,self.rbl_offset.y+pin.ly()) - vector(drc["minwidth_metal2"],0)
+            self.add_rect(layer="metal1",
+                          offset=offset,
+                          width=self.rbl_offset.x-vdd_start.x,
+                          height=drc["minwidth_metal2"])
+            self.add_via(layers=("metal1", "via1", "metal2"),
+                         offset=offset)
+
+        # Add via for the delay chain
+        offset = self.delay_chain_offset + inv_vdd_offset + vector(0,self.delay_chain.width) - vector(drc["minwidth_metal2"],0)
+        self.add_via(layers=("metal1", "via1", "metal2"),
+                     offset=offset)
+        # Add via for the inverter
+        offset = self.rbl_inv_offset + inv_vdd_offset + vector(0,self.inv.width) - vector(drc["minwidth_metal2"],0)
+        self.add_via(layers=("metal1", "via1", "metal2"),
+                     offset=offset)
+            
+    
     def route_gnd(self):
-        """ Route the ground connections together and add a layout pin """
-        # route delay chain gnd to rbl_inv gnd
-        # gnd Node between rbl_inv access tx and delay chain, and is below
-        # en_input
-        self.gnd_position = self.delay_chain_offset
+        # Add a rail in M1 from bottom to two along delay chain
+        gnd_start = self.rbl_inv_offset.scale(1,0) + self.inv.get_pin("gnd").ll().rotate_scale(1,1)
+        # It is the height of the entire RBL and bitcell
+        self.add_layout_pin(text="gnd",
+                            layer="metal2",
+                            offset=gnd_start,
+                            width=drc["minwidth_metal2"],
+                            height=self.rbl.height+self.bitcell.height+self.inv.width)
+                      
+        # Connect the WL pins directly to gnd
+        for row in range(self.rows):
+            wl = "wl[{}]".format(row)
+            pin = self.rbl.get_pin(wl)
+            offset = vector(gnd_start.x,self.rbl_offset.y+pin.ly())
+            self.add_rect(layer="metal1",
+                          offset=offset,
+                          width=self.rbl_offset.x-gnd_start.x,
+                          height=drc["minwidth_metal2"])
+            self.add_via(layers=("metal1", "via1", "metal2"),
+                         offset=offset)
+
+      # Add via for the delay chain
+        offset = self.delay_chain_offset+vector(-0.5*drc["metal1_to_metal1"],self.delay_chain.width)
+        self.add_via(layers=("metal1", "via1", "metal2"),
+                     offset=offset)
+        # Add via for the inverter
+        offset = self.rbl_inv_offset+vector(-0.5*drc["metal1_to_metal1"],self.inv.width)        
+        self.add_via(layers=("metal1", "via1", "metal2"),
+                     offset=offset)
         
-        rbl_gnd_offset = self.rbl_inv_offset 
-        mid1 = vector(0, self.rbl_inv_offset.y)
-        rail2_space = drc["minwidth_metal2"] + drc["metal2_to_metal2"]
-        y_off = self.gnd_position.y + self.delay_chain.width + rail2_space
-        mid2 = vector(mid1.x, y_off)
-        share_gnd = vector(self.gnd_position.x, mid2.y)
-        # Note the inverted stacks
-        lst = [rbl_gnd_offset, mid1, mid2, share_gnd, self.gnd_position]
-        self.add_wire(layers=("metal1", "via1", "metal2"),
-                      coordinates=lst)
-        self.add_label(text="gnd",
-                       layer="metal1",
-                       offset=self.gnd_position)
-        # connect to the metal1 gnd of delay chain
-        offset = mid2 - vector(0.5 * drc["minwidth_metal1"], 0)
-        self.add_rect(layer="metal1",
-                      offset=offset,
-                      width=drc["minwidth_metal1"],
-                      height=-self.delay_chain.width)
-        offset = [offset.x + self.delay_chain.height,
-                  mid2.y]
-        self.add_rect(layer="metal1",
-                      offset=offset,
-                      width=drc["minwidth_metal1"],
-                      height=-self.delay_chain.width)
 
     def route_loads(self,vdd_offset):
         """ Route all  all the load word line to gnd """
