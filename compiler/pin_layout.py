@@ -45,6 +45,10 @@ class pin_layout:
         """ Lower left point """
         return self.rect[0]
 
+    def lr(self):
+        """ Lower right point """
+        return vector(self.rect[1].x,self.rect[0].y)
+    
     def ly(self):
         """ Lower y value """
         return self.rect[0].y
@@ -61,6 +65,18 @@ class pin_layout:
         """ Upper y value """
         return self.rect[1].y
 
+    def ul(self):
+        """ Upper left point """
+        return vector(self.rect[0].x,self.rect[1].y)
+
+    def rc(self):
+        """ Right center point """
+        return vector(self.rect[1].x,0.5*(self.rect[0].y+self.rect[1].y))
+
+    def lc(self):
+        """ Left center point """
+        return vector(self.rect[0].x,0.5*(self.rect[0].y+self.rect[1].y))
+    
     def rx(self):
         """ Right x value """
         return self.rect[1].x

@@ -51,8 +51,9 @@ class logic_effort_dc(design.design):
         self.add_mod(self.inv)
 
         # half chain length is the width of the layout 
-        # invs are stacked into 2 levels so input/output are close        
-        self.width = self.num_top_half * self.inv.width
+        # invs are stacked into 2 levels so input/output are close
+        # extra metal is for the gnd connection U
+        self.width = self.num_top_half * self.inv.width + 2*drc["metal1_to_metal1"] + drc["minwidth_metal1"]
         self.height = 2 * self.inv.height
 
         self.add_inv_list()
@@ -128,7 +129,7 @@ class logic_effort_dc(design.design):
 
 
     def route_inv(self):
-        """add metal routing based on the stage list """
+        """ Add metal routing for each of the fanout stages """
         start_inv = end_inv = 0
         z_pin = self.inv.get_pin("Z")
         a_pin = self.inv.get_pin("A")
@@ -171,24 +172,34 @@ class logic_effort_dc(design.design):
             start_inv = end_inv
 
     def add_layout_pins(self):
-        """ Add vdd and gnd rails and the input/output """
+        """ Add vdd and gnd rails and the input/output. Connect the gnd rails internally on
+        the top end with no input/output to obstruct. """
         vdd_pin = self.inv.get_pin("vdd")
         gnd_pin = self.inv.get_pin("gnd")
         for i in range(3):
             (offset,y_dir)=self.get_gate_offset(0, self.inv.height, i)
+            rail_width = self.num_top_half * self.inv.width
             if i % 2:
                 self.add_layout_pin(text="vdd",
                                     layer="metal1",
                                     offset=offset + vdd_pin.ll().scale(1,y_dir),
-                                    width=self.width,
+                                    width=rail_width,
                                     height=drc["minwidth_metal1"])
             else:
                 self.add_layout_pin(text="gnd",
                                     layer="metal1",
                                     offset=offset + gnd_pin.ll().scale(1,y_dir),
-                                    width=self.width,
+                                    width=rail_width,
                                     height=drc["minwidth_metal1"])
 
+        # Use the right most parts of the gnd rails and add a U connector
+        gnd_pins = self.get_pin("gnd")
+        gnd_start = gnd_pins[0].rc()
+        gnd_mid1 = gnd_start + vector(2*drc["metal1_to_metal1"],0)
+        gnd_end = gnd_pins[1].rc()
+        gnd_mid2 = gnd_end + vector(2*drc["metal1_to_metal1"],0)
+        self.add_path(("metal1"), [gnd_start, gnd_mid1, gnd_mid2, gnd_end])        
+        
         # input is A pin of first inverter
         a_pin = self.inv.get_pin("A")
         first_offset = self.inv_inst_list[0].offset

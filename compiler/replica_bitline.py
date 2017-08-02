@@ -33,76 +33,58 @@ class replica_bitline(design.design):
         self.rows = rows
 
         self.create_modules()
-        self.cal_modules_offset()
+        self.calculate_module_offsets()
         self.add_modules()
-        self.route()
+        #self.route()
         #self.offset_all_coordinates()
 
         self.DRC_LVS()
 
-    def cal_modules_offset(self):
-        pinv_error_offset = 0.025
-        # leave some room for metal1 routing
-        margin = 3 * drc["minwidth_metal1"]
-        # witdth + min_spacing of M1 & M2  
-        m1rail_space = drc["minwidth_metal1"] + drc["metal1_to_metal1"]
-        m2rail_space = drc["minwidth_metal2"] + drc["metal2_to_metal2"]
-        # leave some margin as bit cell layout exceeds its own orgin
-        route_margin = 8 * m2rail_space
-        well_margin = 2 * drc["pwell_enclose_nwell"]
-        bitcell_array_spacing = max(route_margin, well_margin)
-        # now extra space for BL and WL of RBC
-        gnd_route_margin = 5 * m2rail_space
+    def calculate_module_offsets(self):
+        """ Calculate all the module offsets """
+        
+        # These aren't for instantiating, but we use them to get the dimensions
+        self.poly_contact = contact(layer_stack=("poly", "contact", "metal1"))
+        self.m1m2_via = contact(layer_stack=("metal1", "via1", "metal2"))
+        self.m2m3_via = contact(layer_stack=("metal2", "via2", "metal3"))
 
-        y_off = (self.inv.height * 2 + pinv_error_offset
-                     + max(drc["pwell_enclose_nwell"],
-                           m1rail_space * 4))       
-        self.delay_chain_offset = vector(self.delay_chain.height,y_off)
-        self.en_input_offset = vector(0, y_off - m2rail_space)
-        self.en_nor_offset = vector(self.nor.width + margin,
-                                    self.inv.height * 2)
-        self.rbl_inv_offset = vector(self.en_nor_offset.x - self.inv.width, 0)
-        self.access_tx_offset = vector(self.en_nor_offset.x - self.nor.width
-                                           + self.access_tx.height + margin,
-                                       self.inv.height * 0.5)
-        self.replica_bitline_offset = vector(self.delay_chain_offset.x
-                                                 + bitcell_array_spacing,
-                                             self.bitcell.height 
-                                                 + gnd_route_margin)
-        self.delay_inv_offset = vector(self.delay_chain_offset.x - self.inv.width,
-                                       self.inv.height * 2)
+        # M1/M2 routing pitch is based on contacted pitch
+        m1_pitch = max(self.m1m2_via.width,self.m1m2_via.height) + drc["metal2_to_metal2"]
+        m2_pitch = max(self.m2m3_via.width,self.m2m3_via.height) + drc["metal3_to_metal3"]
+        
 
-        self.height = m1rail_space + max(self.delay_chain_offset.y + self.inv.height,
-                                         self.replica_bitline_offset.y 
-                                             + self.bitline_load.height 
-                                             + 0.5 * self.bitcell.height) 
-        self.width = (self.replica_bitline_offset.x + self.replica_bitcell.width)
+        # delay chain will be rotated 90, so move it over a width
+        # we move it up a inv height just for some routing room
+        self.rbl_inv_offset = vector(self.delay_chain.height, self.inv.width)
+        # access TX goes right on top of inverter, leave space for an inverter which is
+        # about the same as a TX. We'll need to add rails though.
+        self.access_tx_offset = vector(1.25*self.inv.height,self.rbl_inv_offset.y) + vector(0,2*self.inv.width)
+        self.delay_chain_offset = self.rbl_inv_offset + vector(0,4*self.inv.width)
+
+        # Replica bitline and such are not rotated
+        self.bitcell_offset = self.rbl_inv_offset + vector(4*m2_pitch, 0)
+
+        self.rbl_offset = self.bitcell_offset + vector(0, self.bitcell.height)
+
+        
+        self.height = self.rbl_offset.y + self.rbl.height 
+        self.width = self.rbl_offset.x + self.bitcell.width
 
 
     def create_modules(self):
         """ Create modules for later instantiation """
-        self.replica_bitcell = self.mod_replica_bitcell()
-        self.add_mod(self.replica_bitcell)
-        # These are the same for dimensions...
-        self.bitcell = self.replica_bitcell
+        self.bitcell = self.mod_replica_bitcell()
+        self.add_mod(self.bitcell)
 
         # This is the replica bitline load column that is the height of our array
-        self.bitline_load = bitcell_array(name="bitline_load", cols=1, rows=self.rows)
-        self.add_mod(self.bitline_load)
+        self.rbl = bitcell_array(name="bitline_load", cols=1, rows=self.rows)
+        self.add_mod(self.rbl)
         
         self.delay_chain = self.mod_delay_chain([1, 1, 1])
         self.add_mod(self.delay_chain)
 
         self.inv = pinv(nmos_width=drc["minwidth_tx"])
         self.add_mod(self.inv)
-
-        # These aren't for instantiating, but we use them to get the dimensions
-        self.poly_contact = contact(layer_stack=("poly", "contact", "metal1"))
-        self.m1m2_via = contact(layer_stack=("metal1", "via1", "metal2"))
-        self.m2m3_via = contact(layer_stack=("metal2", "via2", "metal3"))
-
-        self.nor = nor_2()
-        self.add_mod(self.nor)
 
         self.access_tx = ptx(tx_type="pmos")
         self.add_mod(self.access_tx)
@@ -112,7 +94,8 @@ class replica_bitline(design.design):
         # This is the threshold detect inverter on the output of the RBL
         self.add_inst(name="rbl_inv",
                       mod=self.inv,
-                      offset=self.rbl_inv_offset)
+                      offset=self.rbl_inv_offset,
+                      rotate=90)
         self.connect_inst(["bl[0]", "out", "vdd", "gnd"])
 
         self.add_inst(name="rbl_access_tx",
@@ -129,13 +112,16 @@ class replica_bitline(design.design):
         self.connect_inst(["en", "delayed_en", "vdd", "gnd"])
 
         self.add_inst(name="bitcell",
-                      mod=self.replica_bitcell,
-                      offset=self.replica_bitline_offset,
-                      mirror="MX")
+                      mod=self.bitcell,
+                      offset=self.bitcell_offset)
         self.connect_inst(["bl[0]", "br[0]", "delayed_en", "vdd", "gnd"])
 
-        self.add_loads()
-        self.expan_the_well_to_rbl_inv()
+        self.add_inst(name="load",
+                      mod=self.rbl,
+                      offset=self.rbl_offset)
+        self.connect_inst(["bl", "br"] + ["gnd"]*self.rows + ["vdd", "gnd"])
+        
+        #self.expan_the_well_to_rbl_inv()
 
     def expan_the_well_to_rbl_inv(self):
         width = self.rbl_inv_offset.x - self.access_tx_offset.x + self.inv.width
@@ -145,19 +131,6 @@ class replica_bitline(design.design):
                           offset=well_offset,
                           width=width,
                           height= 2*self.access_tx.width)
-
-    def add_loads(self):
-        self.add_inst(name="load",
-                      mod=self.bitline_load,
-                      offset=self.replica_bitline_offset)
-        temp = []
-        for i in range(1):
-            temp.append("bl[{0}]".format(i))
-            temp.append("br[{0}]".format(i))
-        for j in range(self.rows):
-            temp.append("gnd".format(j))
-        temp = temp + ["vdd", "gnd"]
-        self.connect_inst(temp)
 
     def route(self):
         """connect modules together"""
@@ -182,7 +155,7 @@ class replica_bitline(design.design):
         self.route_gnd()
         # route loads after gnd and vdd created
         self.route_loads(vdd_offset)
-        self.route_RC(vdd_offset)
+        self.route_replica_cell(vdd_offset)
 
     def create_input(self):
         # create routing module based on module offset
@@ -304,6 +277,7 @@ class replica_bitline(design.design):
         self.add_path("metal1", [source_offset, rbl_inv_in])
 
     def route_vdd(self):
+        """ Route the vdd connections together and add a layout pin """
         vdd_offset = vector(0, self.height)
         self.add_layout_pin(text="vdd",
                             layer="metal1",
@@ -322,12 +296,15 @@ class replica_bitline(design.design):
         self.add_wire(layers=("metal1", "via1", "metal2"), 
                       coordinates=[mid1, mid2, end])
 
+        # add layout pin
+        
     def route_gnd(self):
-        """route gnd of delay chain, en_nor, en_inv and rbl_inv"""
+        """ Route the ground connections together and add a layout pin """
         # route delay chain gnd to rbl_inv gnd
         # gnd Node between rbl_inv access tx and delay chain, and is below
         # en_input
         self.gnd_position = self.delay_chain_offset
+        
         rbl_gnd_offset = self.rbl_inv_offset 
         mid1 = vector(0, self.rbl_inv_offset.y)
         rail2_space = drc["minwidth_metal2"] + drc["metal2_to_metal2"]
@@ -355,7 +332,7 @@ class replica_bitline(design.design):
                       height=-self.delay_chain.width)
 
     def route_loads(self,vdd_offset):
-        """connect all the loads word line to gnd"""
+        """ Route all  all the load word line to gnd """
         self.add_via(layers=("metal1", "via1", "metal2"),
                      offset=vdd_offset,
                      mirror="MX")
@@ -371,8 +348,8 @@ class replica_bitline(design.design):
                 self.add_wire(layers=("metal1", "via1", "metal2"), 
                               coordinates=[vdd_offset, mid, load_vdd_offset])
 
-    def route_RC(self,vdd_offset):
-        """route vdd gnd to the replica cell """
+    def route_replica_cell(self,vdd_offset):
+        """ Route vdd gnd to the replica cell """
         # connect vdd
         RC_vdd = self.replica_bitline_offset + self.bitcell.get_pin("vdd").ll().scale(1,-1)
         mid = vector(vdd_offset.x, RC_vdd.y)
