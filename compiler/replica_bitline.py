@@ -95,7 +95,8 @@ class replica_bitline(design.design):
         self.add_inst(name="rbl_inv",
                       mod=self.inv,
                       offset=self.rbl_inv_offset,
-                      rotate=90)
+                      rotate=90,
+                      mirror=MY)
         self.connect_inst(["bl[0]", "out", "vdd", "gnd"])
 
         self.add_inst(name="rbl_access_tx",
@@ -138,147 +139,11 @@ class replica_bitline(design.design):
         self.route_gnd()
         self.route_vdd()
 
-        return
-        a_pin = self.inv.get_pin("A")
-        z_pin = self.inv.get_pin("Z")
-        # calculate pin offset
-        out_offset = self.rbl_inv_offset + z_pin.ll()
-        self.add_via(layers=("metal1", "via1", "metal2"),
-                     offset=out_offset)
+ 
 
-        rbl_inv_in = self.rbl_inv_offset + a_pin.ll()
-        rbl_offset = self.replica_bitline_offset + self.bitcell.get_pin("BL").ll().scale(1,0)
-        clk_out_pin = self.delay_chain.get_pin("out")
-        delay_chain_output = self.delay_chain_offset + clk_out_pin.ll().rotate_scale(-1,1)
-        vdd_offset = vector(self.delay_chain_offset.x + 9 * drc["minwidth_metal2"], 
-                            self.height)
-        self.create_input()
 
-        self.route_rbl_t_rbl_inv(rbl_offset, rbl_inv_in)
-        self.route_access_tx(delay_chain_output, rbl_inv_in, vdd_offset)
-        self.route_vdd()
-        # route loads after gnd and vdd created
-        self.route_loads(vdd_offset)
-        self.route_replica_cell(vdd_offset)
 
-    def create_input(self):
-        # create routing module based on module offset
-        clk_in_pin = self.delay_chain.get_pin("in")
-        input_offset = self.delay_chain_offset + clk_in_pin.ll().rotate_scale(-1,1)
-        mid1 = [input_offset.x, self.en_input_offset.y]
-        self.add_path("metal1", [self.en_input_offset, mid1, input_offset])
 
-        self.add_label(text="en",
-                       layer="metal1",
-                       offset=self.en_input_offset)
-
-    def route_rbl_t_rbl_inv(self, rbl_offset, rbl_inv_in):
-        # rbl_inv input to M3
-        mid1 = rbl_inv_in - vector(0,  
-                                  drc["metal2_to_metal2"] + self.m1m2_via.width)
-        mid2 = vector(self.en_nor_offset.x + 3 * drc["metal1_to_metal1"],
-                      mid1.y)
-        mid3 = vector(mid2.x,
-                      self.replica_bitline_offset.y - self.replica_bitcell.height
-                          - 0.5 * (self.m1m2_via.height + drc["metal1_to_metal1"])
-                          - 2 * drc["metal1_to_metal1"])
-        self.add_wire(layers=("metal2", "via1", "metal1"),
-                      coordinates=[rbl_inv_in, mid1, mid2, mid3])
-
-        # need to fix the mid point as this is done with two wire
-        # this seems to cover the metal1 error of the wire
-        offset = mid3 - vector( [0.5 * drc["minwidth_metal1"]] * 2)
-        self.add_rect(layer="metal1",
-                      offset=offset,
-                      width=drc["minwidth_metal1"],
-                      height=drc["minwidth_metal1"])
-
-        mid4 = [rbl_offset.x, mid3.y]
-        self.add_wire(layers=("metal1", "via1", "metal2"),
-                      coordinates=[rbl_offset, mid4, mid3])
-
-    def route_access_tx(self, delay_chain_output, rbl_inv_in, vdd_offset):
-        self.route_tx_gate(delay_chain_output)
-        self.route_tx_drain(vdd_offset)
-        self.route_tx_source(rbl_inv_in)
-
-    def route_tx_gate(self, delay_chain_output):
-        # gate input for access tx
-        offset = (self.access_tx.poly_positions[0].rotate_scale(0,1)
-                      + self.access_tx_offset)
-        width = -6 * drc["minwidth_metal1"]
-        self.add_rect(layer="poly",
-                      offset=offset,
-                      width=width,
-                      height=drc["minwidth_poly"])
-        y_off = 0.5 * (drc["minwidth_poly"] - self.poly_contact.height)
-        offset = offset + vector(width, y_off)
-        self.add_contact(layers=("poly", "contact", "metal1"),
-                         offset=offset)
-        # route gate to delay_chain output
-        gate_offset = offset + vector(0.5 * drc["minwidth_metal1"],
-                                      0.5 * self.poly_contact.width)
-        self.route_access_tx_t_delay_chain(gate_offset, delay_chain_output)
-        self.route_access_tx_t_WL(gate_offset)
-
-    def route_access_tx_t_delay_chain(self, offset, delay_chain_output):
-        m2rail_space = (drc["minwidth_metal2"] + drc["metal2_to_metal2"]) 
-        mid1 = vector(offset.x, self.delay_chain_offset.y - 3 * m2rail_space)
-        mid2 = [delay_chain_output.x, mid1.y]
-        # Note the inverted wire stack
-        self.add_wire(layers=("metal1", "via1", "metal2"),
-                      coordinates=[offset, mid1, mid2, delay_chain_output])
-        self.add_via(layers=("metal1", "via1", "metal2"),
-                     offset=delay_chain_output,
-                     mirror="MX")
-
-    def route_access_tx_t_WL(self, offset):
-        m1m2_via_offset = offset - vector(0.5 * self.m1m2_via.width,
-                                          0.5 * self.m1m2_via.height)
-        self.add_via(layers=("metal1", "via1", "metal2"),
-                     offset=m1m2_via_offset)
-        # route gate to RC WL
-        RC_WL = self.replica_bitline_offset - self.bitcell.get_pin("WL").ll().scale(0,1)
-        mid1 = vector(offset.x, 0)
-        mid2 = vector(self.en_nor_offset.x + 3 * drc["metal1_to_metal1"], mid1.y)
-        mid3 = vector(RC_WL.x - drc["minwidth_metal1"] - self.m1m2_via.height, mid1.y)
-        mid4 = vector(mid3.x, RC_WL.y)
-        self.add_path("metal2", [offset, mid1, mid2, mid3, mid4])
-
-        offset = mid4 - vector([0.5 * drc["minwidth_metal1"]] * 2)
-        width = RC_WL.x - offset.x
-        # enter the bit line array with metal1
-        via_offset = [mid4.x - 0.5 * self.m1m2_via.width,
-                      offset.y 
-                          - 0.5 * (self.m1m2_via.height 
-                                             - drc["minwidth_metal1"])]
-        self.add_via(layers=("metal1", "via1", "metal2"),
-                     offset=via_offset)
-        self.add_rect(layer="metal1",
-                      offset=offset,
-                      width=width,
-                      height=drc["minwidth_metal1"])
-
-    def route_tx_drain(self,vdd_offset):
-        # route drain to Vdd
-        active_offset = self.access_tx.active_contact_positions[1].rotate_scale(-1,1)
-        correct = vector(-0.5 * drc["minwidth_metal1"], 
-                         0.5 * self.access_tx.active_contact.width)
-        drain_offset = self.access_tx_offset + active_offset + correct
-        close_Vdd_offset = self.rbl_inv_offset + vector(0, self.inv.height)
-        self.add_path("metal1", [drain_offset, close_Vdd_offset])
-
-        mid = [vdd_offset.x, close_Vdd_offset.y]
-        self.add_wire(layers=("metal1", "via1", "metal2"),
-                      coordinates=[close_Vdd_offset, mid, vdd_offset])
-
-    def route_tx_source(self, rbl_inv_in):
-        # route source to BL inv input which is connected to BL
-        active_offset = self.access_tx.active_contact_positions[0].rotate_scale(-1,1)
-        correct = vector(-0.5 * drc["minwidth_metal1"], 
-                         0.5 * self.access_tx.active_contact.width)
-        source_offset = self.access_tx_offset + active_offset + correct
-        self.add_path("metal1", [source_offset, rbl_inv_in])
 
     def route_vdd(self):
         # Add a rail in M1 from bottom to two along delay chain
