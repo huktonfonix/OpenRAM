@@ -185,7 +185,7 @@ class replica_bitline(design.design):
         drain_offset = self.access_tx_offset + self.access_tx.active_contact_positions[0].rotate_scale(-1,1) \
                        + self.poly_contact_offset.rotate_scale(-1,1)
         mid1 = drain_offset - vector(0,2*self.m1_pitch)
-        inv_A_offset = self.rbl_inv_offset + self.inv.get_pin("A").lc().rotate_scale(-1,1)
+        inv_A_offset = self.rbl_inv_offset + self.inv.get_pin("A").lc().rotate_scale(-1,1)+vector(0,self.inv.width)
         mid2 = vector(inv_A_offset.x, mid1.y)
         self.add_path("metal1",[drain_offset, mid1, mid2, inv_A_offset])
         
@@ -304,14 +304,14 @@ class replica_bitline(design.design):
 
     def add_layout_pins(self):
         """ Route the input and output signal """
-        en_offset = self.delay_chain_offset+self.delay_chain.get_pin("in").ll().rotate_scale(-1,1) - vector(drc["minwidth_metal1"],0)
+        en_offset = self.delay_chain_offset+self.delay_chain.get_pin("in").ur().rotate_scale(-1,1) 
         self.add_layout_pin(text="en",
                             layer="metal1",
                             offset=en_offset.scale(1,0),
                             width=drc["minwidth_metal1"],
                             height=en_offset.y)
 
-        out_offset = self.rbl_inv_offset+self.inv.get_pin("Z").ll().rotate_scale(-1,1)- vector(drc["minwidth_metal1"],0)
+        out_offset = self.rbl_inv_offset+self.inv.get_pin("Z").ur().rotate_scale(-1,1) - vector(0,self.inv.width)
         self.add_layout_pin(text="out",
                             layer="metal1",
                             offset=out_offset.scale(1,0),
