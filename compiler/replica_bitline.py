@@ -207,7 +207,7 @@ class replica_bitline(design.design):
             self.add_rect(layer="metal1",
                           offset=offset,
                           width=self.rbl_offset.x-vdd_start.x,
-                          height=drc["minwidth_metal2"])
+                          height=drc["minwidth_metal1"])
             self.add_via(layers=("metal1", "via1", "metal2"),
                          offset=offset)
 
