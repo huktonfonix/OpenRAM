@@ -64,9 +64,9 @@ class replica_bitline(design.design):
 
         # Replica bitline and such are not rotated, but they must be placed far enough
         # away from the delay chain/inverter with space for two M2 tracks
-        self.bitcell_offset = self.rbl_inv_offset + vector(2*self.m2_pitch+drc["metal2_to_metal2"], 0)
+        self.bitcell_offset = self.rbl_inv_offset + vector(2*self.m2_pitch+drc["metal2_to_metal2"], 0) + vector(0, self.bitcell.height)
 
-        self.rbl_offset = self.bitcell_offset + vector(0, self.bitcell.height)
+        self.rbl_offset = self.bitcell_offset
 
         
         self.height = self.rbl_offset.y + self.rbl.height 
@@ -117,7 +117,8 @@ class replica_bitline(design.design):
 
         self.add_inst(name="bitcell",
                       mod=self.bitcell,
-                      offset=self.bitcell_offset)
+                      offset=self.bitcell_offset,
+                      mirror="MX")
         self.connect_inst(["bl[0]", "br[0]", "delayed_en", "vdd", "gnd"])
 
         self.add_inst(name="load",
@@ -162,12 +163,9 @@ class replica_bitline(design.design):
 
         # 3. Route the mid-point of previous route to the bitcell WL
         # route bend of previous net to bitcell WL
-        wl_offset = self.bitcell_offset+self.bitcell.get_pin("WL").lc()
-        # route the WL over on M1 by 2*spacing then bend up
-        bottom_mid_offset = wl_offset - vector(2*drc["metal1_to_metal1"],0)
-        # route up to the level of the mid poing
-        top_mid_offset = vector(bottom_mid_offset.x,delay_en_mid_offset.y)
-        self.add_path("metal1", [delay_en_mid_offset, top_mid_offset, bottom_mid_offset, wl_offset])
+        wl_offset = self.bitcell_offset - self.bitcell.get_pin("WL").lc()
+        wl_mid = vector(delay_en_mid_offset.x,wl_offset.y)
+        self.add_path("metal1", [delay_en_mid_offset, wl_mid, wl_offset])
 
         # SOURCE ROUTE
         # Route the source to the vdd rail
