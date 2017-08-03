@@ -199,7 +199,8 @@ class logic_effort_dc(design.design):
         gnd_mid1 = gnd_start + vector(2*drc["metal1_to_metal1"],0)
         gnd_end = gnd_pins[1].rc()
         gnd_mid2 = gnd_end + vector(2*drc["metal1_to_metal1"],0)
-        self.add_path(("metal1"), [gnd_start, gnd_mid1, gnd_mid2, gnd_end])        
+        #self.add_wire(("metal1","via1","metal2"), [gnd_start, gnd_mid1, gnd_mid2, gnd_end])
+        self.add_path("metal1", [gnd_start, gnd_mid1, gnd_mid2, gnd_end])                
         
         # input is A pin of first inverter
         a_pin = self.inv.get_pin("A")

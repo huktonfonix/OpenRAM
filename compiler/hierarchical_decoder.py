@@ -309,7 +309,7 @@ class hierarchical_decoder(design.design):
         
         z_pin = nand_mod.get_pin("Z")
         a_pin = self.inv.get_pin("A")
-        rect_height = z_pin.uy()-a_pin.ly()
+        rect_height = z_pin.uy()-a_pin.by()
         
         for row in range(self.rows):
             name = "DEC_NAND[{0}]".format(row)
@@ -461,13 +461,13 @@ class hierarchical_decoder(design.design):
 
                     current_inv_height = self.predecoder_height + row_index*self.inv.height
                     if (row_index % 2 == 0):
-                        yoffset_A = current_inv_height + a_pin.ly()
-                        yoffset_B = current_inv_height + b_pin.ly()
+                        yoffset_A = current_inv_height + a_pin.by()
+                        yoffset_B = current_inv_height + b_pin.by()
 
                     else:
                         base = current_inv_height + self.inv.height - drc["minwidth_metal1"]
-                        yoffset_A = base - a_pin.ly()
-                        yoffset_B = base - b_pin.ly()
+                        yoffset_A = base - a_pin.by()
+                        yoffset_B = base - b_pin.by()
 
                     row_index = row_index + 1
                     self.connect_rail(vector(self.rail_x_offsets[index_A], yoffset_A))
@@ -485,15 +485,15 @@ class hierarchical_decoder(design.design):
                         current_inv_height = self.predecoder_height + row_index*self.inv.height
 
                         if (row_index % 2 == 0):
-                            yoffset_A = current_inv_height + a_pin.ly()
-                            yoffset_B = current_inv_height + b_pin.ly()
-                            yoffset_C = current_inv_height + c_pin.ly()
+                            yoffset_A = current_inv_height + a_pin.by()
+                            yoffset_B = current_inv_height + b_pin.by()
+                            yoffset_C = current_inv_height + c_pin.by()
                             contact_C_yoffset = yoffset_C - self.contact_shift
                         else:
                             base = current_inv_height + self.inv.height - drc["minwidth_metal1"]
-                            yoffset_A = base - a_pin.ly()
-                            yoffset_B = base - b_pin.ly()
-                            yoffset_C = base - c_pin.ly()
+                            yoffset_A = base - a_pin.by()
+                            yoffset_B = base - b_pin.by()
+                            yoffset_C = base - c_pin.by()
                             contact_C_yoffset = yoffset_C
 
                         row_index = row_index + 1

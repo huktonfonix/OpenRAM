@@ -40,35 +40,44 @@ class pin_layout:
         """ Center y """
         return 0.5*(self.rect[0].y+self.rect[1].y)
     
-    
+    # The four possible corners
     def ll(self):
         """ Lower left point """
         return self.rect[0]
-
-    def lr(self):
-        """ Lower right point """
-        return vector(self.rect[1].x,self.rect[0].y)
-    
-    def ly(self):
-        """ Lower y value """
-        return self.rect[0].y
-
-    def lx(self):
-        """ Left x value """
-        return self.rect[0].x
-    
-    def ur(self):
-        """ Upper right point """
-        return self.rect[1]
-    
-    def uy(self):
-        """ Upper y value """
-        return self.rect[1].y
 
     def ul(self):
         """ Upper left point """
         return vector(self.rect[0].x,self.rect[1].y)
 
+    def br(self):
+        """ Bottom right point """
+        return vector(self.rect[1].x,self.rect[0].y)
+
+    def ur(self):
+        """ Upper right point """
+        return self.rect[1]
+    
+    # The possible y edge values 
+    def uy(self):
+        """ Upper y value """
+        return self.rect[1].y
+
+    def by(self):
+        """ Bottom y value """
+        return self.rect[0].y
+
+    # The possible x edge values
+    
+    def lx(self):
+        """ Left x value """
+        return self.rect[0].x
+    
+    def rx(self):
+        """ Right x value """
+        return self.rect[1].x
+    
+    
+    # The edge centers
     def rc(self):
         """ Right center point """
         return vector(self.rect[1].x,0.5*(self.rect[0].y+self.rect[1].y))
@@ -77,6 +86,11 @@ class pin_layout:
         """ Left center point """
         return vector(self.rect[0].x,0.5*(self.rect[0].y+self.rect[1].y))
     
-    def rx(self):
-        """ Right x value """
-        return self.rect[1].x
+    def uc(self):
+        """ Upper center point """
+        return vector(0.5*(self.rect[0].x+self.rect[1].x),self.rect[1].y)
+
+    def bc(self):
+        """ Bottom center point """
+        return vector(0.5*(self.rect[0].x+self.rect[1].x),self.rect[0].y)
+

@@ -46,10 +46,8 @@ class wire(path):
         self.horiz_layer_width = drc["minwidth_{0}".format(horiz_layer)]
         via_connect = contact(self.layer_stack,
                               (1, 1))
-        self.node_to_node = [drc["minwidth_" + str(self.horiz_layer_name)] \
-                                         + via_connect.width,
-                                     drc["minwidth_" + str(self.horiz_layer_name)] \
-                                         + via_connect.height]
+        self.node_to_node = [drc["minwidth_" + str(self.horiz_layer_name)] + via_connect.width,
+                             drc["minwidth_" + str(self.horiz_layer_name)] + via_connect.height]
 
     # create a 1x1 contact
     def create_vias(self):
@@ -59,6 +57,9 @@ class wire(path):
         self.c=contact(self.layer_stack, (1, 1))
         c_width = self.c.width
         c_height = self.c.height
+        # FIXME: It is not clear what is the purpose of this
+        # orientation toggler. Why is it initialized to None rather
+        # than True/False
         orient = None  # orientation toggler
         offset = [0, 0]
 
@@ -66,13 +67,14 @@ class wire(path):
             if index != 0:
                 if pl[index][1] == pl[index - 1][0]:
                     if v[0] != w[0]:
-                        offset = [(offset[0] + (w[0] - v[0])),
+                        offset = [offset[0] + w[0] - v[0],
                                   offset[1]]
                     else:
                         offset = [offset[0], 
-                                  (offset[1] + w[1] - v[1])]
+                                  offset[1] + w[1] - v[1]]
                     orient = not orient
                     continue
+            # we are in the x direction
             if v[0] != w[0]:
                 if (orient == None):
                     orient = True
@@ -90,13 +92,11 @@ class wire(path):
                     self.add_via(layers=self.layer_stack,
                                  offset=via_offset,
                                  rotate=90)
-                    corner_offset = [via_offset[0] \
-                                         - 0.5*(c_height + self.vert_layer_width),
-                                     via_offset[1] \
-                                         + 0.5*(c_width - self.horiz_layer_width)]
+                    corner_offset = [via_offset[0] - 0.5*(c_height + self.vert_layer_width),
+                                     via_offset[1] + 0.5*(c_width - self.horiz_layer_width)]
                     self.draw_corner_wire(corner_offset)
-                offset = [(offset[0] + (w[0] - v[0])),
-                          offset[1]]
+                offset = [offset[0] + w[0] - v[0], offset[1]]
+            # we are in the y direction
             elif v[1] != w[1]:
                 if (orient == None):
                     orient = False
@@ -113,13 +113,11 @@ class wire(path):
                     self.add_via(layers=self.layer_stack,
                                  offset=self.switch_pos_list[-1],
                                  rotate=90)
-                    corner_offset = [via_offset[0] \
-                                         - 0.5*(c_height + self.vert_layer_width),
-                                     via_offset[1] \
-                                         + 0.5*(c_width - self.horiz_layer_width)]
+                    corner_offset = [via_offset[0] - 0.5*(c_height + self.vert_layer_width),
+                                     via_offset[1] + 0.5*(c_width - self.horiz_layer_width)]
                     self.draw_corner_wire(corner_offset)
                 offset = [offset[0],
-                          (offset[1] + w[1] - v[1])]
+                          offset[1] + w[1] - v[1]]
 
     def draw_corner_wire(self, offset):
         """ This function adds the corner squares since the center

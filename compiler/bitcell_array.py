@@ -79,7 +79,7 @@ class bitcell_array(design.design):
         vdd_pin = self.cell.get_pin("vdd")
 
         # shift it up by the overlap amount (gnd_pin) too
-        full_height = self.cell.height*self.row_size - 2*gnd_pin.ly()
+        full_height = self.cell.height*self.row_size - 2*gnd_pin.by()
         offset = vector(0.0, 0.0)
         for col in range(self.column_size):
             self.add_layout_pin(text="bl[{0}]".format(col),
@@ -111,8 +111,8 @@ class bitcell_array(design.design):
                 wl_offset =  base_offset - vector(0,wl_pin.uy())
             # unflipped row
             else:
-                vdd_offset = offset + vector(0,vdd_pin.ly())
-                wl_offset = offset + vector(0,wl_pin.ly())
+                vdd_offset = offset + vector(0,vdd_pin.by())
+                wl_offset = offset + vector(0,wl_pin.by())
 
             # add vdd label and offset
             self.add_layout_pin(text="vdd",

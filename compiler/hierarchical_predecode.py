@@ -169,7 +169,7 @@ class hierarchical_predecode(design.design):
         for nand_input in range(self.number_of_outputs):
             inout = str(self.number_of_inputs)+"x"+str(self.number_of_outputs)
             name = "Xpre{0}_nand[{1}]".format(inout,nand_input)
-            rect_height = z_pin.uy()-a_pin.ly()
+            rect_height = z_pin.uy()-a_pin.by()
             if (nand_input % 2 == 0):
                 y_off = nand_input * (self.nand.height)
                 mirror = "R0"
