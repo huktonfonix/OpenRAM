@@ -36,7 +36,7 @@ class replica_bitline(design.design):
         self.calculate_module_offsets()
         self.add_modules()
         self.route()
-        #self.offset_all_coordinates()
+        self.add_layout_pins()
 
         self.DRC_LVS()
 
@@ -302,3 +302,19 @@ class replica_bitline(design.design):
 
         
 
+    def add_layout_pins(self):
+        """ Route the input and output signal """
+        en_offset = self.delay_chain_offset+self.delay_chain.get_pin("in").ll().rotate_scale(-1,1) - vector(drc["minwidth_metal1"],0)
+        self.add_layout_pin(text="en",
+                            layer="metal1",
+                            offset=en_offset.scale(1,0),
+                            width=drc["minwidth_metal1"],
+                            height=en_offset.y)
+
+        out_offset = self.rbl_inv_offset+self.inv.get_pin("Z").ll().rotate_scale(-1,1)- vector(drc["minwidth_metal1"],0)
+        self.add_layout_pin(text="out",
+                            layer="metal1",
+                            offset=out_offset.scale(1,0),
+                            width=drc["minwidth_metal1"],
+                            height=out_offset.y)
+        
