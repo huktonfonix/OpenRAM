@@ -173,9 +173,10 @@ class replica_bitline(design.design):
         # Route the source to the vdd rail
         source_offset = self.access_tx_offset + self.access_tx.active_contact_positions[1].rotate_scale(-1,1) \
                         + self.poly_contact_offset.rotate_scale(-1,1)
-        inv_vdd_offset = self.inv.get_pin("vdd").ll().rotate_scale(-1,1)
+        inv_vdd_offset = self.inv.get_pin("vdd").ll().rotate_scale(-1,-1)
         vdd_offset = self.rbl_inv_offset.scale(1,0) + inv_vdd_offset.scale(1,0) \
-                     + vector(-drc["minwidth_metal1"]+0.5*drc["minwidth_metal2"],source_offset.y)
+                     + vector(0,source_offset.y) + vector(-0.5*drc["minwidth_metal1"],0) 
+
         # route down a pitch so that it will drop a via to M2
         vdd_upper_offset = vdd_offset + vector(0,self.m2_pitch)
         self.add_wire(("metal1","via1","metal2"), [source_offset, vdd_offset, vdd_upper_offset])
@@ -185,16 +186,21 @@ class replica_bitline(design.design):
         drain_offset = self.access_tx_offset + self.access_tx.active_contact_positions[0].rotate_scale(-1,1) \
                        + self.poly_contact_offset.rotate_scale(-1,1)
         mid1 = drain_offset - vector(0,2*self.m1_pitch)
-        inv_A_offset = self.rbl_inv_offset + self.inv.get_pin("A").lc().rotate_scale(-1,1)+vector(0,self.inv.width)
+        print self.rbl_inv_offset
+        print vector(-0.5*drc["minwidth_metal1"],self.inv.width)
+        print self.inv.get_pin("A")
+        print self.inv.get_pin("A").ll().rotate_scale(-1,-1)        
+        inv_A_offset = self.rbl_inv_offset + vector(-0.5*drc["minwidth_metal1"],self.inv.width) \
+                       + self.inv.get_pin("A").ll().rotate_scale(-1,-1)
         mid2 = vector(inv_A_offset.x, mid1.y)
         self.add_path("metal1",[drain_offset, mid1, mid2, inv_A_offset])
         
 
     def route_vdd(self):
         # Add a rail in M1 from bottom to two along delay chain
-        inv_gnd_offset = self.inv.get_pin("gnd").ll().rotate_scale(-1,1)
+        inv_vdd_offset = self.inv.get_pin("gnd").ll().rotate_scale(-1,-1)
         # The rail is from the edge of the inverter bottom plus a metal spacing
-        vdd_start = self.rbl_inv_offset.scale(1,0) + inv_gnd_offset.scale(1,0) + vector(self.m2_pitch,0) \
+        vdd_start = self.rbl_inv_offset.scale(1,0) + inv_vdd_offset.scale(1,0) + vector(self.m2_pitch,0) \
                     - self.offset_fix                    
         # It is the height of the entire RBL and bitcell
         self.add_layout_pin(text="vdd",
