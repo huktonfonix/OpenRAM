@@ -126,7 +126,7 @@ class replica_bitline(design.design):
         self.add_inst(name="load",
                       mod=self.rbl,
                       offset=self.rbl_offset)
-        self.connect_inst(["bl", "br"] + ["gnd"]*self.rows + ["vdd", "gnd"])
+        self.connect_inst(["bl[0]", "br[0]"] + ["gnd"]*self.rows + ["vdd", "gnd"])
         
 
 
@@ -186,10 +186,6 @@ class replica_bitline(design.design):
         drain_offset = self.access_tx_offset + self.access_tx.active_contact_positions[0].rotate_scale(-1,1) \
                        + self.poly_contact_offset.rotate_scale(-1,1)
         mid1 = drain_offset - vector(0,2*self.m1_pitch)
-        print self.rbl_inv_offset
-        print vector(-0.5*drc["minwidth_metal1"],self.inv.width)
-        print self.inv.get_pin("A")
-        print self.inv.get_pin("A").ll().rotate_scale(-1,-1)        
         inv_A_offset = self.rbl_inv_offset + vector(-0.5*drc["minwidth_metal1"],self.inv.width) \
                        + self.inv.get_pin("A").ll().rotate_scale(-1,-1)
         mid2 = vector(inv_A_offset.x, mid1.y)
@@ -201,9 +197,7 @@ class replica_bitline(design.design):
         vdd_pins = self.get_pin("vdd")        
         mid1 = vector(vdd_pins[0].cx(),drain_offset.y)
         # Via will go halfway down from the bitcell
-        print self.bitcell_offset - vector(0,self.bitcell.height)
         bl_offset = self.bitcell_offset - vector(0,self.bitcell.height) + self.bitcell.get_pin("BL").bc()
-        print bl_offset
         via_offset = bl_offset - vector(0,0.5*self.inv.width)
         mid2 = vector(mid1.x,via_offset.y)
         self.add_contact(layers=("metal1", "via1", "metal2"),
