@@ -206,7 +206,7 @@ class replica_bitline(design.design):
         #self.add_path("metal2",[via_offset,bl_offset])   
         
     def route_vdd(self):
-        # Add a rail in M1 from bottom to two along delay chain
+        # Add a rail in M2 from bottom to two M2 above the bitcell load height
         inv_vdd_offset = self.inv.get_pin("gnd").ll().rotate_scale(-1,-1)
         # The rail is from the edge of the inverter bottom plus a metal spacing
         vdd_start = self.rbl_inv_offset.scale(1,0) + inv_vdd_offset.scale(1,0) + vector(self.m2_pitch,0) \
@@ -218,7 +218,7 @@ class replica_bitline(design.design):
                             width=-drc["minwidth_metal2"],
                             height=self.rbl.height+self.bitcell.height+self.inv.width)
 
-        # Connect the vdd pins directly to vdd
+        # Connect the vdd pins of the bitcell load directly to vdd
         vdd_pins = self.rbl.get_pin("vdd")
         for pin in vdd_pins:
             offset = vector(vdd_start.x,self.rbl_offset.y+pin.by()) - vector(drc["minwidth_metal2"],0)
@@ -228,8 +228,8 @@ class replica_bitline(design.design):
                           height=drc["minwidth_metal1"])
             self.add_via(layers=("metal1", "via1", "metal2"),
                          offset=offset)
-            print pin
-        # Also connect the replica bitcell vdd pin
+
+        # Also connect the replica bitcell vdd pin to vdd
         pin = self.bitcell.get_pin("vdd")
         offset = vector(vdd_start.x,self.bitcell_offset.y-pin.uy()) - vector(drc["minwidth_metal2"],0)
         self.add_rect(layer="metal1",
@@ -239,7 +239,7 @@ class replica_bitline(design.design):
         self.add_via(layers=("metal1", "via1", "metal2"),
                      offset=offset)
         
-        # Add a second pin that only goes about a quarter up. No need for full length.
+        # Add a second vdd pin that only goes about a quarter up. No need for full length.
         inv_vdd_offset = self.inv.get_pin("vdd").ll().rotate_scale(-1,1)
         inv_offset = self.rbl_inv_offset + inv_vdd_offset + vector(-drc["minwidth_metal1"],0) \
                      - self.offset_fix                                         
