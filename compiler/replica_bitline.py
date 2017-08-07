@@ -65,8 +65,8 @@ class replica_bitline(design.design):
         self.delay_chain_offset = self.rbl_inv_offset + vector(0,4*self.inv.width)
 
         # Replica bitline and such are not rotated, but they must be placed far enough
-        # away from the delay chain/inverter with space for two M2 tracks
-        self.bitcell_offset = self.rbl_inv_offset + vector(2*self.m2_pitch+drc["metal2_to_metal2"], 0) + vector(0, self.bitcell.height)
+        # away from the delay chain/inverter with space for three M2 tracks
+        self.bitcell_offset = self.rbl_inv_offset + vector(3*self.m2_pitch+drc["metal2_to_metal2"], 0) + vector(0, self.bitcell.height)
 
         self.rbl_offset = self.bitcell_offset
 
@@ -77,7 +77,7 @@ class replica_bitline(design.design):
 
     def create_modules(self):
         """ Create modules for later instantiation """
-        self.bitcell = self.mod_replica_bitcell()
+        self.bitcell = self.replica_bitcell = self.mod_replica_bitcell()
         self.add_mod(self.bitcell)
 
         # This is the replica bitline load column that is the height of our array
@@ -118,7 +118,7 @@ class replica_bitline(design.design):
         self.connect_inst(["en", "delayed_en", "vdd", "gnd"])
 
         self.add_inst(name="bitcell",
-                      mod=self.bitcell,
+                      mod=self.replica_bitcell,
                       offset=self.bitcell_offset,
                       mirror="MX")
         self.connect_inst(["bl[0]", "br[0]", "delayed_en", "vdd", "gnd"])
@@ -193,17 +193,17 @@ class replica_bitline(design.design):
         
         # Route the connection of the drain route (mid2) to the RBL bitline (left)
         drain_offset = mid2
-        # Route the M1 under the vdd rail between rbl_inv and bitcell
+        # Route the M2 to the right of the vdd rail between rbl_inv and bitcell
         vdd_pins = self.get_pin("vdd")        
-        mid1 = vector(vdd_pins[0].cx(),drain_offset.y)
+        mid1 = vector(vdd_pins[0].cx()+self.m2_pitch,drain_offset.y)
         # Via will go halfway down from the bitcell
         bl_offset = self.bitcell_offset - vector(0,self.bitcell.height) + self.bitcell.get_pin("BL").bc()
         via_offset = bl_offset - vector(0,0.5*self.inv.width)
         mid2 = vector(mid1.x,via_offset.y)
-        self.add_contact(layers=("metal1", "via1", "metal2"),
-                         offset=via_offset - vector(0.5*drc["minwidth_metal2"],0.5*drc["minwidth_metal1"]))
-        self.add_path("metal1",[drain_offset,mid1,mid2,via_offset])   
-        self.add_path("metal2",[via_offset,bl_offset])   
+        # self.add_contact(layers=("metal1", "via1", "metal2"),
+        #                  offset=via_offset - vector(0.5*drc["minwidth_metal2"],0.5*drc["minwidth_metal1"]))
+        self.add_wire(("metal1","via1","metal2"),[drain_offset,mid1,mid2,via_offset,bl_offset])
+        #self.add_path("metal2",[via_offset,bl_offset])   
         
     def route_vdd(self):
         # Add a rail in M1 from bottom to two along delay chain
@@ -228,7 +228,17 @@ class replica_bitline(design.design):
                           height=drc["minwidth_metal1"])
             self.add_via(layers=("metal1", "via1", "metal2"),
                          offset=offset)
-
+            print pin
+        # Also connect the replica bitcell vdd pin
+        pin = self.bitcell.get_pin("vdd")
+        offset = vector(vdd_start.x,self.bitcell_offset.y-pin.uy()) - vector(drc["minwidth_metal2"],0)
+        self.add_rect(layer="metal1",
+                      offset=offset,
+                      width=self.bitcell_offset.x-vdd_start.x,
+                      height=drc["minwidth_metal1"])
+        self.add_via(layers=("metal1", "via1", "metal2"),
+                     offset=offset)
+        
         # Add a second pin that only goes about a quarter up. No need for full length.
         inv_vdd_offset = self.inv.get_pin("vdd").ll().rotate_scale(-1,1)
         inv_offset = self.rbl_inv_offset + inv_vdd_offset + vector(-drc["minwidth_metal1"],0) \
