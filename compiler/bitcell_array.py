@@ -115,8 +115,8 @@ class bitcell_array(design.design):
                 wl_offset = offset + vector(0,wl_pin.by())
 
             # add vdd label and offset
-            # only add to odd rows to avoid duplicates
-            if row % 2:
+            # only add to even rows to avoid duplicates
+            if row % 2 == 0:
                 self.add_layout_pin(text="vdd",
                                     layer="metal1",
                                     offset=vdd_offset,
