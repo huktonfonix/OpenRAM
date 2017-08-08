@@ -24,10 +24,46 @@ class pin_layout:
         return "({} layer={} ll={} ur={})".format(self.name,self.layer,self.rect[0],self.rect[1])
         
     def height(self):
-        return self.rect[1].y-self.rect[0].y
+        """ Return height. Abs is for pre-normalized value."""
+        return abs(self.rect[1].y-self.rect[0].y)
     
     def width(self):
-        return self.rect[1].x-self.rect[0].x
+        """ Return width. Abs is for pre-normalized value."""
+        return abs(self.rect[1].x-self.rect[0].x)
+
+    def normalize(self):
+        """ Re-find the LL and UR points after a transform """
+        (first,second)=self.rect
+        ll = vector(min(first[0],second[0]),min(first[1],second[1]))
+        ur = vector(max(first[0],second[0]),max(first[1],second[1]))
+        self.rect=[ll,ur]
+        
+    def transform(self,offset,mirror,rotate):
+        """ Transform with offset, mirror and rotation to get the absolute pin location. 
+        We must then re-find the ll and ur. The master is the cell instance. """
+        (ll,ur) = self.rect
+        if mirror=="MX":
+            ll=ll.scale(1,-1)
+            ur=ur.scale(1,-1)
+        elif mirror=="MY":
+            ll=ll.scale(-1,1)
+            ur=ur.scale(-1,1)
+        elif mirror=="XY":
+            ll=ll.scale(-1,-1)
+            ur=ur.scale(-1,-1)
+            
+        if rotate==90:
+            ll=ll.rotate_scale(-1,1)
+            ur=ur.rotate_scale(-1,1)
+        elif rotate==180:
+            ll=ll.scale(-1,-1)
+            ur=ur.scale(-1,-1)
+        elif rotate==270:
+            ll=ll.rotate_scale(1,-1)
+            ur=ur.rotate_scale(1,-1)
+
+        self.rect=[offset+ll,offset+ur]
+        self.normalize()
 
     def center(self):
         return vector(0.5*(self.rect[0].x+self.rect[1].x),0.5*(self.rect[0].y+self.rect[1].y))

@@ -2,14 +2,11 @@ from math import log
 import design
 from tech import drc, parameter
 import debug
-from ms_flop_array import ms_flop_array
-from wordline_driver import wordline_driver
 from contact import contact
 from pinv import pinv
 from nand_2 import nand_2
 from nand_3 import nand_3
 from nor_2 import nor_2
-from replica_bitline import replica_bitline
 import math
 from vector import vector
 from globals import OPTS
@@ -38,35 +35,42 @@ class control_logic(design.design):
 
     def create_modules(self):
         """ add all the required modules """
-
-        c = reload(__import__(OPTS.config.ms_flop))
-        self.mod_ms_flop = getattr(c, OPTS.config.ms_flop)
-        self.ms_flop = self.mod_ms_flop()
-        self.add_mod(self.ms_flop)
+        input_lst =["CSb","WEb","OEb"]
+        output_lst = ["s_en", "w_en", "tri_en", "tri_en_bar", "clk_bar"]
+        clk =["clk"]
+        rails = ["vdd", "gnd"]
+        for pin in input_lst + output_lst + clk + rails:
+            self.add_pin(pin)
 
         self.nand2 = nand_2()
         self.add_mod(self.nand2)
         self.nand3 = nand_3()
         self.add_mod(self.nand3)
-
-        # Special gates: 4x Inverter
-        self.inv1 = pinv(nmos_width=drc["minwidth_tx"])
-        self.add_mod(self.inv1)
-        self.inv2 = pinv(nmos_width=2 * drc["minwidth_tx"])
-        self.add_mod(self.inv2)
-        self.inv4 = pinv(nmos_width=4 * drc["minwidth_tx"])
-        self.add_mod(self.inv4)
-        self.inv8 = pinv(nmos_width=8 * drc["minwidth_tx"])
-        self.add_mod(self.inv8)
-
-        self.nor2 = nor_2(nmos_width=drc["minwidth_tx"])
+        self.nor2 = nor_2()
         self.add_mod(self.nor2)
 
+
+        # Special gates: inverters for buffering
+        self.inv = self.inv1 = pinv()
+        self.add_mod(self.inv1)
+        self.inv2 = pinv(nmos_width=2*drc["minwidth_tx"])
+        self.add_mod(self.inv2)
+        self.inv4 = pinv(nmos_width=4*drc["minwidth_tx"])
+        self.add_mod(self.inv4)
+        self.inv8 = pinv(nmos_width=8*drc["minwidth_tx"])
+        self.add_mod(self.inv8)
+        self.inv16 = pinv(nmos_width=16*drc["minwidth_tx"])
+        self.add_mod(self.inv16)
+
+        c = reload(__import__(OPTS.config.ms_flop_array))
+        ms_flop_array = getattr(c, OPTS.config.ms_flop_array)
         self.msf_control = ms_flop_array(name="msf_control",
                                          columns=3,
                                          word_size=3)
         self.add_mod(self.msf_control)
 
+        c = reload(__import__(OPTS.config.replica_bitline))
+        replica_bitline = getattr(c, OPTS.config.replica_bitline)
         self.replica_bitline = replica_bitline(rows=int(math.ceil(self.num_rows / 10.0)))
         self.add_mod(self.replica_bitline)
 
@@ -76,9 +80,6 @@ class control_logic(design.design):
         output_lst = ["s_en", "w_en", "tri_en", "tri_en_bar", "clk_bar"]
         clk =["clk"]
         rails = ["vdd", "gnd"]
-        pin_lst = input_lst + output_lst + clk + rails
-        for pin in pin_lst:
-            self.add_pin(pin)
 
         # add label of input, output and clk in metal3 layer 
         input_lst =["CSb","WEb","OEb"]
@@ -100,48 +101,43 @@ class control_logic(design.design):
 
     def setup_layout_offsets(self):
         """ Setup layout offsets, determine the size of the busses etc """
-        # This isn't for instantiating, but we use it to get the dimensions
-        m1m2_via = contact(layer_stack=("metal1", "via1", "metal2"))
+        # These aren't for instantiating, but we use them to get the dimensions
+        self.poly_contact = contact(layer_stack=("poly", "contact", "metal1"))
+        self.poly_contact_offset = vector(0.5*self.poly_contact.width,0.5*self.poly_contact.height)
+        self.m1m2_via = contact(layer_stack=("metal1", "via1", "metal2"))
+        self.m2m3_via = contact(layer_stack=("metal2", "via2", "metal3"))
 
-        # Vertical metal rail gap definition
-        self.metal2_extend_contact = (m1m2_via.second_layer_height - m1m2_via.contact_width) / 2
-        self.gap_between_rails = self.metal2_extend_contact + drc["metal2_to_metal2"]
-        self.gap_between_rail_offset = self.gap_between_rails + drc["minwidth_metal2"]
-        self.via_shift = (m1m2_via.second_layer_width - m1m2_via.first_layer_width) / 2
-
-        # used to shift contact when connecting to nand3 C pin down
-        self.contact_shift = (m1m2_via.first_layer_width - m1m2_via.contact_width) / 2
-
-        # Common parameters for rails
-        self.rail_width = drc["minwidth_metal2"]
-        self.rail_gap = 2 * drc["metal2_to_metal2"]
-        self.rail_offset_gap = self.rail_width + self.rail_gap
+        # M1/M2 routing pitch is based on contacted pitch
+        self.m1_pitch = max(self.m1m2_via.width,self.m1m2_via.height) + max(drc["metal1_to_metal1"],drc["metal2_to_metal2"])
+        self.m2_pitch = max(self.m2m3_via.width,self.m2m3_via.height) + max(drc["metal2_to_metal2"],drc["metal3_to_metal3"])
+        
+        # This corrects the offset pitch difference between M2 and M1
+        self.offset_fix = vector(0.5*(drc["minwidth_metal2"]-drc["minwidth_metal1"]),0)
 
         # First RAIL Parameters
         self.num_rails_1 = 6
-        self.overall_rail_1_gap = (self.num_rails_1 + 1) * self.rail_offset_gap
+        self.overall_rail_1_gap = (self.num_rails_1 + 1) * self.m2_pitch
         self.rail_1_x_offsets = []
 
         # Second RAIL Parameters
         self.num_rails_2 = 4
-        self.overall_rail_2_gap = (self.num_rails_2 + 1) * self.rail_offset_gap
+        self.overall_rail_2_gap = (self.num_rails_2 + 1) * self.m2_pitch
         self.rail_2_x_offsets = []
 
-        # GAP between main control and REPLICA BITLINE
-        self.replica_bitline_gap = self.rail_offset_gap * 2
+        # GAP between main control and replica bitline
+        self.replica_bitline_gap = 2*self.m2_pitch
 
-        self.output_port_gap = 3 * drc["minwidth_metal3"]
         self.logic_height = max(self.replica_bitline.width, 4 * self.inv1.height)
 
     def add_modules(self):
         """ Place all the modules """
         self.add_msf_control()
-        self.set_msf_control_pins()
-        self.add_1st_row(self.output_port_gap)
-        self.add_2nd_row(self.output_port_gap + 2 * self.inv1.height)
+        return
+        self.add_1st_row(0)
+        self.add_2nd_row(2*self.inv1.height)
 
         # Height and width
-        self.height = self.logic_height + self.output_port_gap
+        self.height = self.logic_height 
         self.width = self.offset_replica_bitline.x + self.replica_bitline.height
 
     def add_routing(self):
@@ -155,48 +151,31 @@ class control_logic(design.design):
         self.add_output_routing()
 
     def add_msf_control(self):
-        """ ADD ARRAY OF MS_FLOP"""
-        self.offset_msf_control = vector(0, self.logic_height + self.output_port_gap)
-        self.add_inst(name="msf_control",
-                      mod=self.msf_control,
-                      offset=self.offset_msf_control,
-                      mirror="R270")
+        """ Add control signal flops for OEb, WEb, CSb. """
+        self.offset_msf_control = vector(0, 3*self.inv.height)
+        msf=self.add_inst(name="msf_control",
+                          mod=self.msf_control,
+                          offset=self.offset_msf_control,
+                          rotate=90)
         # don't change this order. This pins are meant for internal connection of msf array inside the control logic.
         # These pins are connecting the msf_array inside of control_logic.
+        
         temp = ["CSb", "WEb", "OEb", "CS_bar", "CS", "WE_bar",
                 "WE", "OE_bar", "OE", "clk", "vdd", "gnd"]
         self.connect_inst(temp)
-        print self.get_layout_pins(self.insts[-1])
-        
-    def set_pin_locations(self,instance_name):
-        pass
-    
-    def set_msf_control_pins(self):
-        """ This creates labels of all the pins in the control logic FFs """
-        # msf_control inputs
-        correct = vector(0, 0.5 * drc["minwidth_metal2"])
-        def translate_inputs(pt1,pt2):
-            """ Translate the control signal outputs """
-            return pt1 + pt2.rotate_scale(1,-1) - correct
 
-        def translate_outputs(pt1,pt2):
-            """ Translate the control signal inputs """
-            return pt1 - correct + vector(self.msf_control.height,- pt2.x)
-
-        # set CS WE OE signal groups(in, out, bar)
-        pt1 = self.offset_msf_control
-        pin_set = ["CSb","WEb","OEb"]
-        in_pos = self.msf_control.din_positions[0:len(pin_set)]
-        out_pos = self.msf_control.dout_positions[0:len(pin_set)]
-        outbar_pos = self.msf_control.dout_bar_positions[0:len(pin_set)]
-        for i in range(len(pin_set)):
-            value = translate_inputs(pt1,in_pos[i])
-            setattr(self,"msf_control_"+pin_set[i]+"_in_position",value)
-            value = translate_outputs(pt1,out_pos[i])
-            setattr(self,"msf_control_"+pin_set[i][0:2]+"_bar_out_position",value)
-            value = translate_outputs(pt1,outbar_pos[i])
-            setattr(self,"msf_control_"+pin_set[i][0:2]+"_out_position",value)
-
+        # Top to bottom: CS WE OE signal groups 
+        pin_set = ["OEb","WEb","CSb"]
+        for (i,pin_name) in zip(range(3),pin_set):
+            subpin_name="din[{}]".format(i)
+            pin=msf.get_pin(subpin_name)
+            #pin=self.msf_control.get_pin("din[{}]".format(i))
+            self.add_layout_pin(text=pin_name,
+                                layer="metal3",
+                                offset=pin.ll(),
+                                width=pin.width(),
+                                height=pin.height())
+        return
         # clk , vdd are metal1 horizontal
         base = self.offset_msf_control - vector(0.5 * drc["minwidth_metal2"], 0)
         msf_clk = self.msf_control.clk_positions[0].rotate_scale(1,-1) 

@@ -358,13 +358,13 @@ class sram(design.design):
         line_gap = 2*drc[m2m]
         return bits*(line_width + line_gap) - line_gap
 
-    def add_control_logic(self, position, mirror):
+    def add_control_logic(self, position, rotate):
         """ Add and place control logic """
         self.control_position = position
         self.add_inst(name="control",
                       mod=self.control,
                       offset=self.control_position,
-                      mirror=mirror)
+                      rotate=rotate)
         temp = ["CSb", "WEb",  "OEb", "s_en", "w_en", "tri_en",
                 "tri_en_bar", "clk_bar", "clk", "vdd", "gnd"]
         self.connect_inst(temp)
@@ -377,7 +377,7 @@ class sram(design.design):
         loc = vector(- 2 * drc["minwidth_metal3"],
                      self.bank_positions[0].y + self.bank.decoder_position.y
                      + 2 * drc["minwidth_metal3"])
-        self.add_control_logic(loc, "R90")
+        self.add_control_logic(loc, 90)
 
         self.width = self.bank.width + self.control.height + 2*drc["minwidth_metal3"]
         self.height = self.bank.height
@@ -461,7 +461,7 @@ class sram(design.design):
         if (self.num_banks == 2):
             self.control_position = vector(0, control_bus_offset.y 
                                                   + self.ms_flop_chars["width"])
-            self.add_control_logic(self.control_position, "R0")
+            self.add_control_logic(self.control_position, 0)
 
             self.CSb_position = self.control_position + self.control.CSb_position
             self.OEb_position = self.control_position + self.control.OEb_position
@@ -572,7 +572,7 @@ class sram(design.design):
         
         self.control_position = vector(0, self.msb_decoder_position.y
                                               + self.msb_decoder.height)
-        self.add_control_logic(self.control_position, "R0")
+        self.add_control_logic(self.control_position, 0)
                                          
         self.CSb_position = self.control_position + self.control.CSb_position
         self.OEb_position = self.control_position + self.control.OEb_position
@@ -735,13 +735,13 @@ class sram(design.design):
                 self.add_via(layers=("metal2", "via2", "metal3"),
                               offset=[bank_side[i].x + drc["minwidth_metal2"],
                                       control_side[i].y],
-                              mirror="R90")
+                              rotate=90)
         elif (self.num_banks == 2 or self.num_banks == 4):
             for i in range(self.control_size):
                 self.add_via(layers=("metal1", "via1", "metal2"),
                              offset=[self.vertical_line_positions[i].x + drc["minwidth_metal2"],
                                      self.control_bus_line_positions[i].y],
-                             mirror="R90")
+                             rotate=90)
                 control_attr = self.bank_property[i]
                 control_side_line_position = (getattr(self.control,control_attr)
                                                     +self.control_position)
@@ -756,7 +756,7 @@ class sram(design.design):
                               offset=[control_side_line_position.x 
                                           + drc["minwidth_metal2"],
                                       self.control_bus_line_positions[i].y],
-                              mirror="R90")
+                              rotate=90)
             for i in range(self.num_banks/2):
                 # MSB line connections
                 msb_line = self.control_size + self.num_banks/2 - 1 - i
@@ -840,7 +840,7 @@ class sram(design.design):
                                   height=drc["minwidth_metal1"])
                     self.add_via(layers=("metal1", "via1", "metal2"),
                                  offset=end - vector(0, 0.5 * self.m1m2_via.width),
-                                 mirror="R90")
+                                 rotate=90)
                 for i in range(4):
                     bank_select_line = self.control_size + 2 + self.bank_addr_size + i
                     msb_decoder_out = (self.msb_decoder_position
@@ -940,7 +940,7 @@ class sram(design.design):
             self.add_via(layers=("metal1", "via1", "metal2"),
                          offset=[control_vdd1_position.x + drc["minwidth_metal2"],
                                  control_vdd_supply.y],
-                         mirror="R90")
+                         rotate=90)
 
         if (self.control.width > self.bank.width):
             last_bank = self.num_banks - 1
@@ -961,7 +961,7 @@ class sram(design.design):
                       offset=[control_vdd2_position.x 
                                   + drc["minwidth_metal2"],
                               control_vdd_supply.y],
-                      mirror="R90")
+                      rotate=90)
 
         self.add_layout_pin(text="vdd",
                             layer="metal2",
@@ -1075,12 +1075,12 @@ class sram(design.design):
                      offset=[self.sram_bank_left_gnd_positions[0].x
                                   + drc["minwidth_metal2"],
                              control_gnd_supply.y],
-                     mirror="R90")
+                     rotate=90)
         # Control gnd
         self.add_via(layers=("metal1", "via1", "metal2"),
                      offset=[control_gnd_position.x + drc["minwidth_metal2"],
                              control_gnd_supply.y],
-                     mirror="R90")
+                     rotate=90)
         self.add_layout_pin(text="gnd",
                             layer="metal2",
                             offset=[control_gnd_position.x,

@@ -32,6 +32,8 @@ class instance(geometry):
     def __init__(self, name, mod, offset, mirror, rotate):
         """Initializes an instance to represent a module"""
         geometry.__init__(self)
+        debug.check(mirror not in ["R90","R180","R270"], "Please use rotation and not mirroring during instantiation.")
+        
         self.name = name
         self.mod = mod
         self.gds = mod.gds
@@ -53,6 +55,14 @@ class instance(geometry):
                               mirror=self.mirror,
                               rotate=self.rotate)
 
+
+    def get_pin(self,name):
+        """ Return an absolute pin that is offset and transformed based on
+        this instance location. """
+        pin = self.mod.get_pin(name)
+        pin.transform(self.offset,self.mirror,self.rotate)
+        return pin
+        
     def __str__(self):
         """ override print function output """
         return "inst: " + self.name + " mod=" + self.mod.name

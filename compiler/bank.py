@@ -909,7 +909,7 @@ class bank(design.design):
                          mirror="R270")
             self.add_via(layers=("metal2", "via2", "metal3"),
                          offset=dout_position, 
-                         mirror="R90")
+                         rotate=90)
             # dout_bar connection to column select 0
             line_offset = self.central_line_xoffset[self.number_of_control_lines]
             connection_width = line_offset - dout_bar_position.x + drc["minwidth_metal2"]
@@ -923,7 +923,7 @@ class bank(design.design):
             self.add_via(layers=("metal2", "via2", "metal3"),
                          offset=(dout_bar_position 
                                      + vector(drc["minwidth_metal2"], 0)), 
-                         mirror="R90")
+                         rotate=90)
             
     def route_msf_address_to_row_decoder(self):
         """ Routing the row address lines from the address ms-flop array to the row-decoder  """
@@ -962,7 +962,7 @@ class bank(design.design):
                           offset=second_contact_offset)
             self.add_via(layers=("metal2", "via2", "metal3"),
                           offset=msf_row_addr_line_position, 
-                          mirror="R90")
+                          rotate=90)
 
         for i in range(self.addr_size):
             # Route msf address inputs
@@ -1051,10 +1051,10 @@ class bank(design.design):
         connection_width = self.central_line_xoffset[5] - clk_connection_position.x
         self.add_via(layers=("metal1", "via1", "metal2"),
                       offset=msf_address_clk_position, 
-                      mirror="R90")
+                      rotate=90)
         self.add_via(layers=("metal2", "via2", "metal3"),
                       offset=msf_address_clk_position, 
-                      mirror="R90")
+                      rotate=90)
 
         mid_base = vector(msf_address_clk_position.x, clk_connection_position.y)
         mid1 = mid_base + vector(0, 0.5 * drc["minwidth_metal3"])
@@ -1168,12 +1168,12 @@ class bank(design.design):
                               offset=[self.bank_select_or_position.x
                                           + drc["minwidth_metal1"],
                                       A_y_offset], 
-                              mirror="R90")
+                              rotate=90)
                 self.add_via(layers=("metal2", "via2", "metal3"),
                              offset=[self.bank_select_or_position.x 
                                          + drc["minwidth_metal1"],
                                      A_y_offset], 
-                             mirror="R90")
+                             rotate=90)
             else:
                 # connect A to last A, both are tri_en_bar
                 via_offset = vector(self.bank_select_or_position.x 
@@ -1181,10 +1181,10 @@ class bank(design.design):
                                     A_y_offset)
                 self.add_via(layers=("metal1", "via1", "metal2"),
                              offset=via_offset,
-                             mirror="R90")
+                             rotate=90)
                 self.add_via(layers=("metal2", "via2", "metal3"),
                              offset=via_offset, 
-                             mirror="R90")
+                             rotate=90)
 
                 start = via_offset + vector(0, 0.5 * self.m1m2_via.width)
                 mid = [self.left_vdd_x_offset - self.left_vdd_x_offset 
@@ -1335,7 +1335,7 @@ class bank(design.design):
                               - self.bitcell_array.height)
             self.add_via(layers=("metal1", "via1", "metal2"),
                           offset=[offset.x + drc["minwidth_metal2"], yoffset], 
-                          mirror="R90")
+                          rotate=90)
        
         # GND connectiontions for the left side of bitcell-array
         self.add_rect(layer="metal2",  
@@ -1344,7 +1344,7 @@ class bank(design.design):
                       height=yoffset + drc["minwidth_metal1"])
         self.add_via(layers=("metal1", "via1", "metal2"),
                      offset=[0, yoffset], 
-                     mirror="R90")
+                     rotate=90)
 
         # LEFT HAND SIDE GND RAIL CONNECTIONS
         # Connections of Tri_gate GND to the left hand GND rail
@@ -1398,7 +1398,7 @@ class bank(design.design):
                                          + 0.5*drc["minwidth_metal2"],
                                      wordline_driver_gnd_offset.y 
                                          - correct.y], 
-                             mirror="R90")
+                             rotate=90)
 
         # Connecting Pre-decoder gnd rail
         for i in range(len(self.decoder.pre_decoder_gnd_positions)):
@@ -1435,7 +1435,7 @@ class bank(design.design):
             self.add_via(layers=("metal1", "via1", "metal2"),
                          offset=(ms_addres_gnd_offset  
                                      + vector(drc["minwidth_metal1"], 0)), 
-                         mirror="R90")
+                         rotate=90)
             self.add_rect(layer="metal1",  
                           offset=ms_addres_gnd_offset,  
                           width=self.left_gnd_x_offset - ms_addres_gnd_offset.x, 
@@ -1475,7 +1475,7 @@ class bank(design.design):
                     self.add_via(layers=("metal1", "via1", "metal2"),
                                  offset=[x_offset + drc["minwidth_metal1"],  
                                          y_offset], 
-                                 mirror="R90")
+                                 rotate=90)
 
     def delay(self, slew, load):
         """ return  analytical delay of the bank"""

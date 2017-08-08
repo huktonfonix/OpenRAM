@@ -127,6 +127,8 @@ class layout:
         layerNumber = techlayer[layer]
         if layerNumber >= 0:
             self.objs.append(geometry.rectangle(layerNumber, offset, width, height))
+            return self.objs[-1]
+        return None
         
                          
     def get_pin(self, text):
@@ -163,6 +165,8 @@ class layout:
         layerNumber = techlayer[layer]
         if layerNumber >= 0:
             self.objs.append(geometry.label(text, layerNumber, offset, zoom))
+            return self.objs[-1]
+        return None
 
 
     def add_path(self, layer, coordinates, width=None):
