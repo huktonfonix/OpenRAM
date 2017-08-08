@@ -60,8 +60,15 @@ class instance(geometry):
         """ Return an absolute pin that is offset and transformed based on
         this instance location. """
         pin = self.mod.get_pin(name)
-        pin.transform(self.offset,self.mirror,self.rotate)
-        return pin
+        if type(pin)==list:
+            new_pins = []
+            for p in pin:
+                p.transform(self.offset,self.mirror,self.rotate)                
+                new_pins.append(p)
+            return new_pins
+        else:
+            pin.transform(self.offset,self.mirror,self.rotate)
+            return pin
         
     def __str__(self):
         """ override print function output """
