@@ -208,7 +208,7 @@ class replica_bitline(design.design):
     def route_vdd(self):
         # Add a rail in M2 that is to the right of the inverter gnd pin 
         # The rail is from the edge of the inverter bottom plus a metal spacing
-        vdd_start = self.rbl_inv_offset.scale(1,0) + vector(self.m2_pitch,0) - vector(drc["minwidth_metal2"],0) - self.offset_fix                    
+        vdd_start = self.rbl_inv_inst.get_pin("gnd").ll().scale(1,0) + vector(self.m2_pitch,0) - self.offset_fix #- vector(drc["minwidth_metal2"],0) - self.offset_fix                    
         # It is the height of the entire RBL and bitcell
         self.add_layout_pin(text="vdd",
                             layer="metal2",

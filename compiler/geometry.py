@@ -59,7 +59,10 @@ class instance(geometry):
     def get_pin(self,name):
         """ Return an absolute pin that is offset and transformed based on
         this instance location. """
-        pin = self.mod.get_pin(name)
+        
+        import copy
+        pin = copy.deepcopy(self.mod.get_pin(name))
+        
         if type(pin)==list:
             new_pins = []
             for p in pin:
