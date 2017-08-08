@@ -175,6 +175,7 @@ class replica_bitline(design.design):
         source_offset = self.access_tx_offset + self.access_tx.active_contact_positions[1].rotate_scale(-1,1) \
                         + self.poly_contact_offset.rotate_scale(-1,1)
         inv_vdd_offset = self.rbl_inv_inst.get_pin("vdd").uc()
+        print inv_vdd_offset
         vdd_offset = inv_vdd_offset.scale(1,0) + source_offset.scale(0,1) 
 
         # route down a pitch so that it will drop a via to M2
@@ -307,9 +308,9 @@ class replica_bitline(design.design):
         self.add_via(layers=("metal1", "via1", "metal2"),
                      offset=offset)
 
-        # Connect the bitcell gnd pin to therail
+        # Connect the bitcell gnd pin to the rail
         gnd_start = self.get_pin("gnd").uc()
-        gnd_end = self.rbl_inv_inst.get_pin("gnd").uc()
+        gnd_end = self.rbl_inst.get_pin("gnd").uc()
         # Add a couple midpoints so that the wire will drop a via and then route horizontal on M1
         gnd_mid1 = gnd_start + vector(0,2*drc["metal2_to_metal2"])
         gnd_mid2 = gnd_end + vector(0,2*drc["metal2_to_metal2"])
